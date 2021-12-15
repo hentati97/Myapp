@@ -1,0 +1,1363 @@
+// GTAG
+;(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!=='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-N48L8TN');
+
+var rwmpVars = {
+    adInProgress : false,
+    currentIndex: 0,
+    adIndex : 0,
+    forcePlay : false,
+    finalPlaylist : [],
+    globalVast : false,
+    yknytmzg : false,
+    autoplayLunched : false
+}
+
+// Start: isolation du code
+;(function(window, rwmpVars, undefined) {
+    
+    const vastClient = new VAST.VASTClient();
+    let vastTracker;
+
+    const displayReduced = false;
+
+    let consentString = (typeof(Didomi) != 'undefined' && typeof Didomi.getUserStatus === "function")? Didomi.getUserStatus()['consent_string'] : getCookie('euconsent-v2');
+    const rwmpLoadPlayer = (sponsorizedMedias) => {
+// -----------------------------START rwmpLoadPlayer() --------------------------------------
+
+        // Gestion de l'autoplay
+        let autoplay = false;
+
+        if( typeof( sponsorizedMedias[0] ) != 'undefined' ){
+            if( typeof( sponsorizedMedias[0].autoplay ) != 'undefined' )
+                autoplay = sponsorizedMedias[0].autoplay;
+        }
+        console.log('Edisound - autoplay = ', autoplay);
+
+        let rwm_trunk_editor_duration = 5, rwm_trunk_editor_duration_init = 5;
+        let rwm_trunk_sponso_duration = 1, rwm_trunk_sponso_duration_init = 1;
+        let rwm_trunk_step_duration = 61;
+        var lastListenedRwmId = null;
+        var lastLlistenedRest = 0;
+
+        // Fonction appelée à chaque seconde de lecture
+        const mfwOnPlaying = (metadata, playedSeconds) => {
+            let isPaid = (metadata.paid !== 'undefined' && metadata.paid === 1);
+            let rwmId = metadata.rwm_episode_id;
+            let listenId = metadata.listen_id;
+            let listenKey = metadata.listen_key;
+            let rwm_duration = (isPaid) ? rwm_trunk_sponso_duration : rwm_trunk_editor_duration;
+
+            if( lastListenedRwmId === rwmId ){
+                if( (Math.floor(playedSeconds) % rwm_duration) === 0 && !rwmpVars.adInProgress){ // pour réduire le travail
+                    let rest = Math.floor(playedSeconds / rwm_duration);
+                    //console.log( 'modulo : ' + modulo + ' - rest : ' + rest + ' - rest : ' + lastLlistenedRest );
+                    if( rest === (lastLlistenedRest +1) ){
+                        let data = {listen_id: listenId, listen_key: listenKey, asset_id: rwmId, seconds: Math.floor(playedSeconds), autoplay: autoplay, uuid: '1eb7520c\u002D70bd\u002D6372\u002D8bb0\u002D95ad3fef3cf3' };
+
+                        fetch('https\u003A\/\/publishers.edisound.com\/api\/p\/stats', {
+                            method: "POST",
+                            body: JSON.stringify(data),
+                            headers: new Headers({"Content-Type": "application/json"})
+                        }).then(r => null);
+                    }
+                    lastLlistenedRest = rest;
+
+                    // toutes les secondes avant la 1ere minute, puis toutes les 5 secondes
+                    rwm_trunk_editor_duration = ( !isPaid && Math.floor(playedSeconds) >= rwm_trunk_step_duration ) ? 5 : rwm_trunk_editor_duration_init;
+                    rwm_trunk_sponso_duration = ( isPaid && Math.floor(playedSeconds) >= rwm_trunk_step_duration ) ? 5 : rwm_trunk_sponso_duration_init;
+                }
+
+                if (rwmpVars.adInProgress) {
+                    vastTracker.setProgress(playedSeconds);
+                    if (rwmpVars.yknytmzg === true) {
+
+                        if ( !rwmpVars.vastTrackerComplete && playedSeconds > (Amplitude.getSongDuration() / 6) ){
+                            vastTracker.track('complete');
+                            rwmpVars.vastTrackerComplete = true;
+                        }
+                    }
+                    else
+                    {
+                        if (Math.floor(Amplitude.getSongPlayedPercentage()) === '0') {
+                            vastTracker.setDuration(Amplitude.getSongDuration())
+                        }
+                    }
+                }
+            }
+            else{
+                lastLlistenedRest = 0;
+                lastListenedRwmId = rwmId;
+            }
+        };
+
+        // mix sponsorizedMedias with rwmpSongs
+        console.log('sponsorizedMedias', sponsorizedMedias);
+        console.log('rwmpSongs', rwmpSongs);
+
+        const sortType = 'each_n';
+        const sortTypeEachNumber = 1;
+        switch(sortType){
+            case 'each_n':
+                for (let i = 0; i < rwmpSongs.length; i++) {
+                    if( sponsorizedMedias.length > 0 && ( i % sortTypeEachNumber ) === 0 ) {
+                        rwmpVars.finalPlaylist.push(sponsorizedMedias.shift());
+                    }
+                    rwmpVars.finalPlaylist.push(rwmpSongs[i]);
+                }
+                if( sponsorizedMedias.length > 0 && (i % sortTypeEachNumber) === 0 ) {
+                    rwmpVars.finalPlaylist.push(sponsorizedMedias.shift());
+                }
+                break;
+        }
+                if(rwmpSongs.length === 0 && sponsorizedMedias.length > 0){
+            rwmpVars.finalPlaylist.push(sponsorizedMedias.shift());
+        }
+
+        console.log('finalPlaylist', rwmpVars.finalPlaylist);
+
+        // insérer le html du player
+        rwmpContainerEl.innerHTML = rwmp_htmlTemplate;
+
+        // insérer le html du player reduced
+        let rwmpReducedContainerEl = null;
+        if (displayReduced) {
+            if (document.querySelector('div.player-reduced') == null) {
+                rwmpReducedContainerEl = document.createElement("div");
+                rwmpReducedContainerEl.classList.add("player-reduced");
+                rwmpReducedContainerEl.innerHTML = rwmp_reduced_htmlTemplate;
+                document.body.appendChild(rwmpReducedContainerEl); //document.getElementsByTagName('body')[0].appendChild(rwmpReducedContainerEl);
+            }
+            else {
+                rwmpReducedContainerEl = document.querySelector('div.player-reduced');
+            }
+        }
+
+        // compléter le html du player avec la playlist
+        const rwmpPlaylistContainerEl = rwmpContainerEl.querySelector('#amplitude-playlist.amplitude-playlist');
+        const rwmpPlaylistContainerRdcdEl = ( rwmpReducedContainerEl != null ) ? rwmpReducedContainerEl.querySelector('#amplitude-playlist.amplitude-playlist.extras-playlist') : null;
+        if(rwmpPlaylistContainerEl){
+            for (let i = 0; i < rwmpVars.finalPlaylist.length; i++) {
+                let playlistItemEl = document.createElement("div");
+                playlistItemEl.setAttribute('data-amplitude-song-index', i);
+                playlistItemEl.setAttribute('class', 'song amplitude-song-container amplitude-play-pause cc3');
+                const minutes = Math.floor(rwmpVars.finalPlaylist[i].metadata.duration / 60);
+                const seconds = Math.floor(rwmpVars.finalPlaylist[i].metadata.duration % 60);
+
+                                playlistItemEl.innerHTML = `
+             <div class="song-now-playing-icon-container cbc3">
+                <svg class="svg edisound_widget-container__play" width="32" height="32" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                   <path class="cc5" d="M43.625 29.803L23.646 17.426C22.189 16.474 21 17.173 21 18.988V43.01c0 1.812 1.188 2.518 2.646 1.562l19.979-12.375s.711-.5.711-1.197c0-.7-.711-1.198-.711-1.198z" fill="#888" fill-rule="evenodd"/>
+                </svg>
+                <svg class="svg edisound_widget-container__pause" width="32" height="32" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                   <g fill="none" fill-rule="evenodd">
+                      <path class="cc5" d="M40.587 16.61h-4.33a2.19 2.19 0 00-2.188 2.201v23.592c0 1.221.979 2.207 2.188 2.207h4.33a2.193 2.193 0 002.188-2.207V18.811a2.186 2.186 0 00-2.188-2.201zM24.2 16.61h-4.328c-1.211 0-2.193.98-2.193 2.201v23.592c0 1.221.982 2.207 2.193 2.207H24.2a2.195 2.195 0 002.188-2.207V18.811A2.193 2.193 0 0024.2 16.61z" fill="#05308C"/>
+                   </g>
+                </svg>
+             </div>
+             <div class="song-meta-data">
+                <span title="${rwmpVars.finalPlaylist[i].name.replace('"', '\"')}" class="song-title">${rwmpVars.finalPlaylist[i].name}</span>
+                <span class="song-duration cc3">${minutes >= 10 ? minutes : '0'+minutes}:${seconds >= 10 ? seconds : '0'+seconds}</span>
+             </div>
+          `;
+                                rwmpPlaylistContainerEl.appendChild(playlistItemEl);
+                if(rwmpPlaylistContainerRdcdEl){
+                    let playlistRdcdItemEl = playlistItemEl.cloneNode(true);
+                    rwmpPlaylistContainerRdcdEl.appendChild(playlistRdcdItemEl);
+                }
+            }
+        }
+
+        // Add CSS and AMPLITUDEJS
+        let firstPlayClick = true;
+        var init_conf = {
+            "continue_next": true,
+            "debug": false,
+            "preload": "none",
+            "songs": rwmpVars.finalPlaylist,
+            "start_song": 1,
+            "callbacks": {
+                "play": function() {
+                updatenotification();
+                    if(firstPlayClick && dataLayer != null){
+                        dataLayer.push({'event': 'track-event','categorie':'player','action':'first_play'});
+                        firstPlayClick = false;
+                    }
+
+                    let metadata = Amplitude.getActiveSongMetadata();
+                    let topRightEl = document.querySelector('.rwm-podcast-player div#player-top-right');
+                    let msgEl = document.querySelector('.rwm-podcast-player div#player-top-right .msg');
+                    if(topRightEl && msgEl){
+                        if('paid' in metadata){
+                            topRightEl.classList.add("msg-active");
+                        } else {
+                            topRightEl.classList.remove("msg-active");
+                        }
+                    }
+
+                    var preroll_url = false;
+                    if (typeof(metadata.preroll_url) != 'undefined')
+                        preroll_url = metadata.preroll_url;
+                    else if (rwmpVars.globalVast !== false)
+                        preroll_url = rwmpVars.globalVast;
+
+                    if (!rwmpVars.adInProgress && !rwmpVars.forcePlay && preroll_url) {
+                        rwmpVars.currentIndex = Amplitude.getActiveIndex();
+
+                        console.log('Calling VAST url : ' + preroll_url);
+                        vastClient.get(preroll_url, {withCredentials: true}).then(res => {
+                            if (res.ads.length) {
+                                vastTracker = new VAST.VASTTracker(vastClient,
+                                    res.ads[0],
+                                    res.ads[0].creatives[0]);
+                                vastTracker.trackImpression();
+
+                                if (rwmpVars.yknytmzg === true) {
+                                    vastTracker.setDuration(res.ads[0].creatives[0].duration / 6);
+                                }
+
+                                rwmpVars.vastTrackerComplete = false;
+                                rwmpVars.adInProgress = true;
+                                rwmpVars.adIndex = Amplitude.addSong({"yknytmzg": rwmpVars.yknytmzg, "url": res.ads[0].creatives[0]['mediaFiles'][0].fileURL, 'cover_art_url': 'https\u003A\/\/publishers.edisound.com\/images\/picto\u002Dad.jpg'});
+                                Amplitude.bindNewElements();
+                                Amplitude.playSongAtIndex(rwmpVars.adIndex);
+                                Amplitude.removeSong(rwmpVars.adIndex);
+                                Amplitude.bindNewElements();
+
+                                // console.log("Disable song progress range");
+                                let styleEl = document.querySelector('#style-rwmp-song-progress-range');
+                                if(!styleEl){
+                                    styleEl = document.createElement("style");
+                                    styleEl.id = 'style-rwmp-song-progress-range';
+                                    document.body.appendChild(styleEl);
+                                }
+                                styleEl.innerHTML = ".rwm-podcast-player div#progress-container input[type=range]::-webkit-slider-thumb { border-color: Silver; background-color: Silver !important; cursor: default;} .rwm-podcast-player div#progress-container .disable.activate{width: 100%; height: 30px; position:relative; z-index: 25; display: block}";
+                                let progressContainerEl = document.querySelector('.rwm-podcast-player div#progress-container');
+                                progressContainerEl.style.cursor = "default";
+                                document.querySelector('.rwm-podcast-player div#progress-container input[type=range]').style.cursor = "default";
+                                let progressDisableEl = document.querySelector('.rwm-podcast-player div#progress-container .disable');
+                                if(!progressDisableEl){
+                                    progressDisableEl = document.createElement("div");
+                                    progressDisableEl.classList.add("disable");
+                                    progressContainerEl.appendChild(progressDisableEl);
+                                }
+                                progressDisableEl.classList.add("activate");
+                            }
+                        })
+                    }
+                    else {
+                        rwmpVars.forcePlay = false;
+                    }
+                },
+                "initialized": function(){
+                    if ( autoplay ){
+                        const podcastAutoplayRetryMax = 10;
+                        const podcastAutoplayRetryInterval = setInterval(podcastPlay, 1500);
+                        let podcastAutoplayRetry = 1;
+                        function podcastPlay(){
+                            if (rwmpVars.autoplayLunched === true) {
+                                return;
+                            }
+                            var playButton = document.querySelector('#back');
+                            var playButton2 = document.querySelector('#play-pause');
+                            if (playButton !== null && Amplitude.getPlayerState() !== "playing"){
+                                playButton.click();
+                                playButton2.click();
+                                if( Amplitude.getPlayerState() === "playing" || podcastAutoplayRetry >= podcastAutoplayRetryMax) {
+                                    rwmpVars.autoplayLunched = true;
+
+                                    clearInterval(podcastAutoplayRetryInterval);
+                                }
+                                podcastAutoplayRetry++;
+                            }
+                        }
+                    }
+                },
+                "song_change": function() {
+                    Amplitude.setVolume(Amplitude.getVolume()); // bug amplitude https://trello.com/c/Gpc4aA8O
+                    updatenotification();
+                    if(!rwmpVars.adInProgress){
+                        // console.log("Remove div disable song progress range");
+                        let styleEl = document.querySelector('#style-rwmp-song-progress-range');
+                        if(styleEl){
+                            styleEl.innerHTML = ".rwm-podcast-player div#progress-container .disable{display: none;}";
+                        }
+                        document.querySelector('.rwm-podcast-player div#progress-container').style.cursor = "pointer";
+                        document.querySelector('.rwm-podcast-player div#progress-container input[type=range]').style.cursor = "pointer";
+                        let progressDisableEl = document.querySelector('.rwm-podcast-player div#progress-container .disable');
+                        if(progressDisableEl){
+                            progressDisableEl.classList.remove("activate");
+                        }
+                    }
+                },
+                "timeupdate": () => {
+                    mfwOnPlaying(Amplitude.getActiveSongMetadata(), Amplitude.getSongPlayedSeconds());
+                },
+                "ended": function(){
+                    if (rwmpVars.adInProgress && rwmpVars.adIndex === Amplitude.getActiveIndex()) {
+                        rwmpVars.adInProgress = false;
+                        Amplitude.removeSong( rwmpVars.adIndex );
+                        Amplitude.bindNewElements();
+                        rwmpVars.forcePlay = true;
+                        Amplitude.playSongAtIndex( rwmpVars.currentIndex );
+                        //vastTracker.track('complete');
+                    }
+                }
+            }
+        };
+
+        let variablesCss = 'https\u003A\/\/publishers.edisound.com\/player\/skin\/1ec10e56\u002Ded7f\u002D69e0\u002Da8d4\u002D03a804556839';
+        const mainDesignCss = 'https://publishers.edisound.com/build/player-small.e50d6b8c.css';
+        let cssList = [
+            variablesCss,
+            mainDesignCss
+        ];
+        if (displayReduced) {
+            cssList.push('https://publishers.edisound.com/build/player-reduced.96dceb45.css');
+        }
+                
+        for (const css of cssList) {
+            let link = document.createElement('link');
+            link.href = css;
+            link.type = "text/css"; link.rel = "stylesheet"; link.media = "screen,print";
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
+        // 4 > Initializes AmplitudeJS
+        Amplitude.init(init_conf);
+        Amplitude.pause();
+
+        // chargement pastille "sponsorisé"" si 1er élément de type podcast pub
+        let topRightEl = document.querySelector('.rwm-podcast-player div#player-top-right');
+        let msgEl = document.querySelector('.rwm-podcast-player div#player-top-right .msg');
+        if(topRightEl && msgEl){
+            if('paid' in Amplitude.getActiveSongMetadata()){
+                topRightEl.classList.add("msg-active");
+            } else {
+                topRightEl.classList.remove("msg-active");
+            }
+        }
+
+        if (typeof rwmpVars.finalPlaylist[0] != 'undefined' && typeof rwmpVars.finalPlaylist[0].metadata.duration != 'undefined') {
+            const minutes = Math.floor(rwmpVars.finalPlaylist[0].metadata.duration / 60);
+            const seconds = Math.floor(rwmpVars.finalPlaylist[0].metadata.duration % 60);
+
+            rwmpContainerEl.querySelector('#time-container .amplitude-duration-minutes').innerHTML = `${minutes >= 10 ? minutes : '0'+minutes}`;
+            rwmpContainerEl.querySelector('#time-container .amplitude-duration-seconds').innerHTML = `${seconds >= 10 ? seconds : '0'+seconds}`;
+
+            if (displayReduced) {
+                rwmpReducedContainerEl.querySelector('.time-container .amplitude-duration-minutes').innerHTML = `${minutes >= 10 ? minutes : '0'+minutes}`;
+                rwmpReducedContainerEl.querySelector('.time-container .amplitude-duration-seconds').innerHTML = `${seconds >= 10 ? seconds : '0'+seconds}`;
+            }
+        }
+
+        // 5 > code pour share button <!--div class="wrapper-social-share-bar"-->
+        const rwmpShareButtonEls = document.querySelectorAll('.rwmp-share');  // colonne de droite
+        if(rwmpShareButtonEls.length !== 0)
+        {
+            const rwmpShareContainerEl = document.createElement('div');
+            rwmpShareContainerEl.classList.add('rwm-podcast-player__share');
+            rwmpShareContainerEl.style.display = 'none';
+            rwmpShareContainerEl.innerHTML = rwmp_share_htmlTemplate;
+            document.body.appendChild(rwmpShareContainerEl);
+
+            let rwmpShareButtons = rwmpShareContainerEl.querySelectorAll('a');
+            for (const button of rwmpShareButtons) {
+                button.addEventListener('click', (e) => {
+                    let buttonEl = e.currentTarget;
+                    let shareType = buttonEl.getAttribute('data-share-type');
+                    let shareUrl = Amplitude.getActiveSongMetadata().frontpage;
+                    let shareTitle = Amplitude.getActiveSongMetadata().name;
+                    let openUrl = '';
+                    let popup = (url, title, w, h) => {
+                        let left = (screen.width/2)-(w/2), top = (screen.height/2)-(h/2);
+                        return window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left);
+                    };
+                    switch (shareType) {
+                        case 'facebook':
+                            let shareUrlFacebook = 'https://publishers.edisound.com/fr/podcast/podcast-tech-attitude';
+                            openUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + shareUrlFacebook;
+                            popup(openUrl, shareTitle, 600, 600);
+                            break;
+                        case 'twitter':
+                            let shareUrlTwitter = 'https://publishers.edisound.com/fr/podcast/podcast-tech-attitude';
+                            openUrl = 'http://twitter.com/share?text=' + encodeURIComponent(shareTitle) + '&url=' + shareUrlTwitter;
+                            popup(openUrl, shareTitle, 600, 600);
+                            break;
+                        case 'linkedin':
+                            let shareUrlLinkedin = 'https://publishers.edisound.com/fr/podcast/podcast-tech-attitude';
+                            let getMeta = (metaName) => {
+                                const metas = document.getElementsByTagName('meta');
+                                for (let i = 0; i < metas.length; i++) {
+                                    if (metas[i].getAttribute('name') === metaName) {
+                                        return metas[i].getAttribute('content');
+                                    }
+                                }
+                                return '';
+                            }
+                            let abstract = Amplitude.getActiveSongMetadata().description;
+                            openUrl = 'https://www.linkedin.com/sharing/share-offsite/?mini=true&url=' + encodeURIComponent(shareUrlLinkedin) + '&title=' + encodeURIComponent(shareTitle) + '&summary=' + encodeURIComponent(abstract);
+                            popup(openUrl, shareTitle, 600, 600);
+                            break;
+                        case 'copy-link':
+                            const el = document.createElement('textarea');
+                            el.value = shareUrl;
+                            document.body.appendChild(el);
+                            el.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(el);
+                            // https://www.w3schools.com/howto/howto_js_popup.asp
+                            let popinCopyLink = document.getElementById("rwmp__share__copy-link-popin");
+                            popinCopyLink.classList.toggle("show");
+                            setTimeout(function(){
+                                let popinCopyLink = document.getElementById("rwmp__share__copy-link-popin");
+                                popinCopyLink.classList.toggle("show");
+                            }, 2500);
+                            break;
+                        case 'email':
+                            window.location.href = "mailto:mail@example.org?body=" + encodeURIComponent(shareUrl);
+                            break;
+                    }
+                });
+            }
+            rwmpShareButtonEls.forEach((rwmpShareButtonEl) => {
+                rwmpShareButtonEl.addEventListener('click', function( e ) {
+                    let shareContainerEl = document.querySelector('.rwm-podcast-player__share');
+                    shareContainerEl.style.display = 'block';
+                    shareContainerEl.style.top = e.clientY + 'px';
+                    shareContainerEl.style.left = e.clientX - rwmpShareContainerEl.offsetWidth + 'px';
+                    let closeEl = document.querySelector('.rwmp__share-menu-item--close');
+                    closeEl.addEventListener('click', function( e ) {
+                        let shareContainerEl = document.querySelector('.rwm-podcast-player__share');
+                        rwmpShareContainerEl.style.display = 'none';
+                    }, false);
+                }, false);
+            });
+        }
+
+                if (rwmpContainerEl != null) {
+            rwmpContainerEl.addEventListener("mouseenter", function() {
+                    if (rwmpVars.autoplayLunched === true) {
+                        return;
+                    }
+                    const podcastAutoplayRetryMax = 10;
+                    const podcastAutoplayRetryInterval = setInterval(podcastPlay, 1500);
+                    let podcastAutoplayRetry = 1;
+                    function podcastPlay(){
+                        if (rwmpVars.autoplayLunched === true) {
+                            return;
+                        }
+                        var playButton = document.querySelector('#back');
+                        var playButton2 = document.querySelector('#play-pause');
+                        if (playButton !== null && Amplitude.getPlayerState() !== "playing"){
+                            playButton.click();
+                            playButton2.click();
+                            if( Amplitude.getPlayerState() === "playing" || podcastAutoplayRetry >= podcastAutoplayRetryMax) {
+                                rwmpVars.autoplayLunched = true;
+
+                                clearInterval(podcastAutoplayRetryInterval);
+                            }
+                            podcastAutoplayRetry++;
+                        }
+                    }
+                },
+                {once: true}
+            );
+        }
+        
+        // Global Events
+        const podcastPlayer = document.querySelector("#amplitude-player");
+        const reducedPlayer = document.querySelector(".player-reduced");
+        let downloadButton = document.querySelectorAll('.download');
+        let backwardButtons = document.querySelectorAll('#back');
+        let forwardButtons = document.querySelectorAll('#forward');
+        let prevButtons = document.querySelectorAll('.rwm-prev');
+        let nextButtons = document.querySelectorAll('.rwm-next');
+        let playlistSongs = document.querySelectorAll('#amplitude-playlist');
+
+        let visibilityTracker = true;
+
+        const skipSeconds = seconds => {
+            const duration = Amplitude.getSongDuration()
+            const currentTime = parseFloat(Amplitude.getSongPlayedSeconds())
+            const targetTime = parseFloat(currentTime + seconds)
+            Amplitude.setSongPlayedPercentage((targetTime / duration) * 100)
+        }
+
+        if ("IntersectionObserver" in window) {
+            const observerPlayer = new IntersectionObserver(entries => {
+                entries.map(entry => {
+                    let shareContainerEl = document.querySelector('.rwm-podcast-player__share');
+                    if(entry.isIntersecting) {
+                        if (displayReduced) reducedPlayer.classList.remove('visible');
+                        if (shareContainerEl) shareContainerEl.style.display = 'none';
+                        if (visibilityTracker){
+                            visibilityTracker = false;
+                            if (dataLayer) dataLayer.push({'event': 'track-event','categorie':'player','action':'visible'});
+                        }
+                    }
+                    else{
+                        if (displayReduced){
+                            reducedPlayer.classList.add('visible');
+                            if (dataLayer) dataLayer.push({'event': 'track-event','categorie':'player-sticky','action':'visible'});
+                        }
+                        if (shareContainerEl) shareContainerEl.style.display = 'none';
+                    }
+                })
+            }, {
+                rootMargin: '0px 0px 0px 0px'
+            });
+            observerPlayer.observe(podcastPlayer);
+        }
+
+        if (downloadButton != null){
+            for( var i = 0; i < downloadButton.length; i++ ){
+                downloadButton[i].addEventListener('click', function(e){
+                    window.open(Amplitude.getActiveSongMetadata().frontpage, '_blank');
+                    if (dataLayer != null) dataLayer.push({'event': 'track-event','categorie':'player','action':'download'});
+
+                    let metadata = Amplitude.getActiveSongMetadata();
+                    if (metadata.listen_id !== undefined){
+                        let data = {listen_id: metadata.listen_id, listen_key: metadata.listen_key, asset_id: metadata.rwm_episode_id, event: 'download'};
+                        fetch('https\u003A\/\/publishers.edisound.com\/api\/p\/events', {
+                            method: "POST",
+                            body: JSON.stringify(data),
+                            headers: new Headers({"Content-Type": "application/json"})
+                        }).then(r => null);
+                    }
+
+                });
+            }
+        }
+
+        if (backwardButtons != null){
+            for( var i = 0; i < backwardButtons.length; i++ ){
+                backwardButtons[i].addEventListener('click', function(e){
+                    if (rwmpVars.adInProgress === false)
+                        skipSeconds(-10);
+                });
+            }
+        }
+
+        if (forwardButtons != null){
+            for( var i = 0; i < forwardButtons.length; i++ ){
+                forwardButtons[i].addEventListener('click', function(e){
+                    if (rwmpVars.adInProgress === false)
+                        skipSeconds(+10);
+                });
+            }
+        }
+
+        if (prevButtons != null){
+            for( var i = 0; i < prevButtons.length; i++ ){
+                prevButtons[i].addEventListener('click', function(e){
+                    if (rwmpVars.adInProgress === false) Amplitude.prev();
+                });
+            }
+        }
+
+        if (nextButtons != null){
+            for( var i = 0; i < nextButtons.length; i++ ){
+                nextButtons[i].addEventListener('click', function(e){
+                    if (rwmpVars.adInProgress === false) Amplitude.next();
+                });
+            }
+        }
+
+        playlistSongs.forEach(item => {
+            item.addEventListener("click", (e) => {
+                if (rwmpVars.adInProgress) {
+                    e.stopPropagation();
+                }
+            }, true);
+        })
+
+        if (displayReduced){
+            // player reduced code
+            const actionsButton = document.querySelector(".amplitude-actions");
+            const divExtrasActions = document.querySelector(".extras-actions");
+            const playlistButton = document.querySelector(".extras-buttons.button-playlist");
+            const divExtrasPlaylist = document.querySelector(".extras-playlist");
+            const expandButton = document.querySelector(".amplitude-expand");
+
+            actionsButton.addEventListener('click', function(){
+                if(divExtrasActions != null) divExtrasActions.classList.toggle('visible');
+                if(actionsButton != null) actionsButton.classList.toggle('active');
+                if(divExtrasPlaylist != null) divExtrasPlaylist.classList.remove('visible');
+                if(playlistButton != null) playlistButton.classList.remove('active');
+            });
+
+            playlistButton.addEventListener('click', function(){
+                if(divExtrasPlaylist != null) divExtrasPlaylist.classList.toggle('visible');
+                if(playlistButton != null) playlistButton.classList.toggle('active');
+                if(divExtrasActions != null) divExtrasActions.classList.remove('visible');
+                if(actionsButton != null) actionsButton.classList.remove('active');
+            });
+
+            expandButton.addEventListener('click', function(){
+                if (reducedPlayer.classList.contains('small'))
+                    reducedPlayer.classList.remove('small');
+                else{
+                    reducedPlayer.classList.add('small');
+                    if(divExtrasActions != null) divExtrasActions.classList.remove('visible');
+                    if(actionsButton != null) actionsButton.classList.remove('active');
+                    if(divExtrasPlaylist != null) divExtrasPlaylist.classList.remove('visible');
+                    if(playlistButton != null) playlistButton.classList.remove('active');
+                }
+            });
+        }
+        else if (reducedPlayer != null)
+            reducedPlayer.remove();
+
+// ----------------------------- END rwmpLoadPlayer() --------------------------------------
+    };
+
+    // initialisation des variables
+    const rwmpSongs = [{"rwm_episode_id":22108,"listen_id":5355178325303051,"listen_key":"8d78edeb675e0fb27b8302aed824293964d681b0363c9a4b3b79cf45528082ad","name":"Tech Attitude - 21 - B\u00e9atrice Kosowski, IBM","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 21 : B\u00e9atrice Kosowski, pr\u00e9sidente d'IBM France.","metadata":{"duration":1693.048125,"channel":"joint stereo","audio_size":27089187,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-21-beatrice-kosowski-ibm","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/e6d903619cbf77da1fcee91574ba60501a3c9859251a1e30e8978bb3e088.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/83d631cff41f0527355509dbaeb1192cad1dd6ad59f5a1921ee293acc502.jpg?alias=width400","date_create":{"date":"2021-12-15 15:55:09.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5997,"listen_id":5355178326613582,"listen_key":"42a4e96ec261cc764a10acb941a6d14dcd14219891806a02d4a35f6575604f3c","name":"Tech Attitude - 20 - Bernard Ourghanlian, Microsoft","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 20 : Bernard Ourghanlian, directeur technique et s\u00e9curit\u00e9 de Microsoft France.","metadata":{"duration":1654.0473125,"channel":"joint stereo","audio_size":26465174,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-20-bernard-ourghanlian-microsoft-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/a872596904e6b6816d3e3d9baa2085a3843434338d4ff8b65054ded0acd9.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/73d861910eedb39dc43aac9ea5bae1401a5c7532b0870a2d1f07457282bb.jpg?alias=width400","date_create":{"date":"2021-07-02 15:04:59.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5996,"listen_id":5355178326696132,"listen_key":"4b9f34ebac58076b537410c2638f2f8a452bf53b2d60284a1ac02ba809c20dcc","name":"Tech Attitude - 19 - Luc Dammann, Adobe","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 19 : Luc Dammann, vice president & managing director d\u2019Adobe pour l\u2019Europe de l\u2019Ouest.","metadata":{"duration":2513.0318125,"channel":"joint stereo","audio_size":40208926,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-19-luc-dammann-adobe-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/4fd5f3b012ae5ed45ed392a3ffa6a02a39ba03c380d9b79b50aa3c77b9c7.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/18e9e321040bf8b4f5d1c4e677df6630aa542255a48f7689b94c8f3489f1.jpg?alias=width400","date_create":{"date":"2021-06-14 08:00:13.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5995,"listen_id":5355178326752612,"listen_key":"4ce334de387043535d91857718ceff50d7bd453f05799eb9314bc31d29f0f62e","name":"Tech Attitude - 18 - G\u00e9rald Karsenti, SAP France","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 18 : G\u00e9rald Karsenti, pr\u00e9sident de SAP France.","metadata":{"duration":2554.0440625,"channel":"joint stereo","audio_size":40865122,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-18-gerald-karsenti-sap-france-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/2f006d0db564a4b03051cb7d70fc8e2baf0e1ff2fa75a594dfe199ec1cb8.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/292f6b740eb6ad9226e7cf3bf2442f428bd4e87b522cc4dc3163991f7201.jpg?alias=width400","date_create":{"date":"2021-06-04 14:00:21.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5994,"listen_id":5355178326807252,"listen_key":"73f6ed3c81897e79df5a8a8be22e328395a081350df788285b090e277c9f1cb3","name":"Tech Attitude - 17 - J\u00e9r\u00f4me Nanty, Carrefour","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 17 : J\u00e9r\u00f4me Nanty, Directeur ex\u00e9cutif ressources humaines et patrimoine Carrefour groupe et France.","metadata":{"duration":1944.032625,"channel":"joint stereo","audio_size":31104939,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-17-jerome-nanty-carrefour-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/f81364664524010ae137c69eb3d9ef41b861a09aa02c240215090680608c.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/ec5240d5bb30b3b998828e2f5f90816617ec8ab9042026646c0862ac0525.jpg?alias=width400","date_create":{"date":"2021-05-31 18:00:03.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5993,"listen_id":5355178326859400,"listen_key":"82f8b86fed96b081a2782df102afaa2075d3ddb09e83e712d2077d84e82bcf6a","name":"Tech Attitude - 16 - C\u00e9dric Ramat, Pernod Ricard","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 16 : C\u00e9dric Ramat, directeur des ressources humaines de Pernod Ricard.","metadata":{"duration":1400.032625,"channel":"joint stereo","audio_size":22400939,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-16-cedric-ramat-pernod-ricard-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/f59d4a453838cfc50bd100226dceb7e1163268bf77d7764f435799f4c129.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/e23453c78c54c560aeff7a30e6024adc0ab4d962751ce26512bc69d9ff64.jpg?alias=width400","date_create":{"date":"2021-05-25 08:00:01.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5992,"listen_id":5355178326909859,"listen_key":"38ae5cb42dbb1b39bca540e80837a6311134af09d30233bc735957864a8c717d","name":"Tech Attitude - 15 - Arnaud de Bermingham, Scaleway","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 15 : Arnaud de Bermingham, directeur g\u00e9n\u00e9ral de Scaleway.","metadata":{"duration":1844.035875,"channel":"joint stereo","audio_size":29504991,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-15-arnaud-de-bermingham-scaleway-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/1cf28be4d0c295239e7d74ff8bb90bc578dea91eb3f39f9a28808c8a0c89.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/63a27c808886bcd9a49b33d36df9e70e40e8e3630ec7becdba8d9ca411ed.jpg?alias=width400","date_create":{"date":"2021-05-04 18:01:02.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5991,"listen_id":5355178326957631,"listen_key":"21e682b40fda7488f33390e476a16c754b056c4921466e83be58510da610d46f","name":"Tech Attitude - 14 - Jean-Manuel Soussan, groupe Bouyg\u2026","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 14 : Jean-Manuel Soussan, directeur g\u00e9n\u00e9ral adjoint, directeur des ressources humaines du groupe Bouygues.","metadata":{"duration":1382.7918125,"channel":"joint stereo","audio_size":22125086,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-14-jean-manuel-soussan-groupe-bouygues-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/0b5cbfe8a8fea838ab23aebbde3519f09faf5561e4417f1e96f8f1e5c5e5.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/8f7d8cf784fb2578afac1d2c9a7c1165a75b1756242c08e3ccab4243f46f.jpg?alias=width400","date_create":{"date":"2021-03-11 12:00:38.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5990,"listen_id":5355178327022144,"listen_key":"286d0b3914057a9ffe78da251086b13283b52e4956a1dec05344f7ed88637db5","name":"Tech Attitude - 13 - C\u00e9line Saada-B\u00e9naben, eBay","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 13 : C\u00e9line Saada-B\u00e9naben, Directrice g\u00e9n\u00e9rale d'eBay France","metadata":{"duration":1018.0440625,"channel":"joint stereo","audio_size":16289122,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-13-celine-saada-benaben-ebay-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/c3b596af4fcbf0ad93c540c88cda1a4d177bf55873e0a0a55e24135cdf3a.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/9d0d82a7936008f65bfd3d57460dd5336ea36f7bb1895b0a822e6e7f8f2f.jpg?alias=width400","date_create":{"date":"2020-10-29 14:00:24.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5989,"listen_id":5355178327073268,"listen_key":"53811463c2aaef2b0e5bb573779e7dfb4bd5175148d6f2019b840c818c953f59","name":"Tech Attitude - 12 - Claire Calmejane, Soci\u00e9t\u00e9 G\u00e9n\u00e9rale","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 12 : Claire Calmejane, Directrice de l'innovation chez Soci\u00e9t\u00e9 G\u00e9n\u00e9rale","metadata":{"duration":1830.6089375,"channel":"joint stereo","audio_size":29290160,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-12-claire-calmejane-societe-generale-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/165aff11c5f16f5f3a2ce2aad8db95376999c0cf6fc043479fce75e6e67f.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/585386ea2b0551e59d61539991af1d17e50b87cd5182b378fbe24413fa30.jpg?alias=width400","date_create":{"date":"2020-10-20 12:00:34.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5988,"listen_id":5355178327124555,"listen_key":"67fd0730a2aab8782ede635627f304bde050625978aba39162363b017aba107c","name":"Tech Attitude - 10 - Laureline Serieys, Uber","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.\n\u00c9pisode 10 : Laureline Serieys, directrice g\u00e9n\u00e9rale d'Uber France","metadata":{"duration":1574.24325,"channel":"joint stereo","audio_size":25188309,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-10-laureline-serieys-uber-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/a9b2efdef6991f91474b5a503a6c3ee6066e3dc80f665dbf3465305a5719.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/b43ceac3b8608dc3f13709249c7850558ce2281ff1851e128793f16b2acf.jpg?alias=width400","date_create":{"date":"2020-10-16 14:18:43.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5987,"listen_id":5355178327173304,"listen_key":"c40fcdf2a231ac3a449f45fab05a2db45c5c9362adef5fed5486a1cb6c20459a","name":"Tech Attitude - 11 - Bernardo Cabrera, Objenious","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances de la tech et de l'ebusiness fran\u00e7ais : IA, cloud, IoT, fintech, mobilit\u00e9s, retail, m\u00e9dia\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise qui fait part de sa vision.  \n\u00c9pisode 11 : Bernardo Cabrera, directeur d'Objenious","metadata":{"duration":1701.2505625,"channel":"joint stereo","audio_size":27220426,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-11-bernardo-cabrera-objenious-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/8f3c7fa76fa94b853b15fefa25bab6b3f188774e70445980af5086488ca7.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/c7d908f07ef2a70f0181d57eaae6a209ecd91b35c5d0e5c4d6837c12fb6c.jpg?alias=width400","date_create":{"date":"2020-10-15 12:22:09.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5986,"listen_id":5355178327221161,"listen_key":"dca02559dcac3acc4bb1f04aa1fad11017e7cb66fe69105117a608a69de00fed","name":"Tech Attitude - 09 - Karine Picard, Oracle","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 9 : Karine Picard, country manager France d'Oracle","metadata":{"duration":1552.039125,"channel":"joint stereo","audio_size":24833043,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-09-karine-picard-oracle-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/10f4304b3273362e1d4305219e9add8a9d085c784d527d5a1d6e5866cf48.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/2f19a0919e8d571d01b60433071b561d2ff6597d7f667b47e681bdc1c1bd.jpg?alias=width400","date_create":{"date":"2020-09-23 11:53:20.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5985,"listen_id":5355178327280635,"listen_key":"5e804bbeec3bdb01b0787d3cd00e467133895c50fd4beebf09cbb3186e67afb7","name":"Tech Attitude - 08 - St\u00e9phane Huet, Dell","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 8 : St\u00e9phane Huet, directeur g\u00e9n\u00e9ral de Dell Technologies France.","metadata":{"duration":2800.039125,"channel":"joint stereo","audio_size":44801043,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-08-stephane-huet-dell-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/6b888bea34293582463bc4bffc6090c87355f118dbbfa4d3b30cd95e70d9.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/86e316220131e06ed4742e9639452bf035786abe52c29909b2680d7d00a8.jpg?alias=width400","date_create":{"date":"2020-09-07 14:14:27.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5984,"listen_id":5355178327370487,"listen_key":"b2eeab015aa1ed23541c22acde58d25b1da88c871ea89dd2e34ab3c631abc6a7","name":"Tech Attitude - 07 - Michel Paulin, OVH","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 7 : Michel Paulin, directeur g\u00e9n\u00e9ral d'OVH.","metadata":{"duration":3037.5444375,"channel":"joint stereo","audio_size":48601128,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-07-michel-paulin-ovh-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/335312e9ae4bd1e55699ff4bd5e58c7e1a145f2d6587c88ce2bf73ed9138.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/886d0870c9bcfb789d45dc8f1c6ce05b98525a483b4b7fdbdf412490f718.jpg?alias=width400","date_create":{"date":"2019-05-13 15:00:29.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5983,"listen_id":5355178327421646,"listen_key":"b954d44be6f65e0f13de267c8aa59ce13fd9a64f06acd9eddc7c3ece9f0742aa","name":"Club Fintech - 04 - Andreas Lambropoulos, BNP Paribas\u2026","description":"Le Journal du Net (JDN) vous propose une \u00e9mission 100% fintech. A chaque nouveau num\u00e9ro, nous recevons un acteur de la fintech, de la banque ou de l'assurance, un institutionnel ou toute entreprise qui investit cet \u00e9cosyst\u00e8me en plein boom. L'occasion de l'interroger sur ses actualit\u00e9s, le faire r\u00e9agir sur un \u00e9v\u00e9nement et d\u00e9crypter avec lui les tendances du secteur.\n\u00c9pisode 4 : Andreas Lambropoulos,  Responsable des initiatives strat\u00e9giques BNP Paribas IFS.","metadata":{"duration":1857.5934375,"channel":"joint stereo","audio_size":29721912,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/club-fintech-04-andreas-lambropoulos-bnp-paribas-ifs-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/0e1b58cd1ad84a18bd1bce56e4a240deab6d354f40d6b67deb03aeeb0295.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/d6a70d718d0d4bc39525e6e175d45b59d09b5475fb1beabada0ed8450b85.jpg?alias=width400","date_create":{"date":"2019-03-06 16:03:54.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5982,"listen_id":5355178327480543,"listen_key":"75738662a3f89a9fb461870ad26f51d15ae5a9a83cd135ca55ed3675bcce7315","name":"Tech Attitude - 06 - Arnaud de Bermingham, Scaleway","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 6 : Arnaud de Bermingham, directeur g\u00e9n\u00e9ral de Scaleway.","metadata":{"duration":2796.0424375,"channel":"joint stereo","audio_size":44737096,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-06-arnaud-de-bermingham-scaleway-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/0b79039c94e12719ab5f382d1d2ff9c18bdcbb0d32461cd1b352f69594ff.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/ef53abc0703daeb4f2b7f4670d2bf2efe20a12e30c355c4723ce6354580b.jpg?alias=width400","date_create":{"date":"2019-02-18 08:00:05.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5981,"listen_id":5355178327529843,"listen_key":"b5d5a5f0ec5628266ed27633228add8d3dcf924b0c8060b37a15c5b3bfdfb310","name":"Club Fintech - 03 - Charles Egly, Younited Credit","description":"Le Journal du Net (JDN) vous propose une \u00e9mission 100% fintech. A chaque nouveau num\u00e9ro, nous recevons un acteur de la fintech, de la banque ou de l'assurance, un institutionnel ou toute entreprise qui investit cet \u00e9cosyst\u00e8me en plein boom. L'occasion de l'interroger sur ses actualit\u00e9s, le faire r\u00e9agir sur un \u00e9v\u00e9nement et d\u00e9crypter avec lui les tendances du secteur.\n\u00c9pisode 3 : Charles Egly,  cofondateur et CEO de Younited Credit.","metadata":{"duration":1579.6766875,"channel":"joint stereo","audio_size":25275244,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/club-fintech-03-charles-egly-younited-credit-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/1818a336470108a54423795a03ce8c80deb51dc2e79cc3942f984f754d4b.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/ba7655bf08e14cc5a40d952792288a81e6f3e884f569e6702a3afd383da3.jpg?alias=width400","date_create":{"date":"2019-01-29 14:51:37.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5980,"listen_id":5355178327578100,"listen_key":"3b0718f004390d7b87e211cdc8cb209e1fb7600f50a7bad2ab768355bc296989","name":"Tech Attitude - 05 - Luc Julia, Samsung","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 5 : Luc Julia, vice-pr\u00e9sident mondial de l\u2019innovation de Samsung.","metadata":{"duration":2394.0440625,"channel":"joint stereo","audio_size":38305122,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-05-luc-julia-samsung-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/0649c80b236bda2254443248dbb6bf755a65c07079f706149ab424ebb124.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/d35f2dfef9dbed99d842d72bc5e4f4f144ae5192433c2a56c7e9e92afb88.jpg?alias=width400","date_create":{"date":"2019-01-24 09:00:03.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5979,"listen_id":5355178327626480,"listen_key":"63f7a437c7e9b63491a3ca9d8d3cc410a2f1b27c585c2e4f19c227c21fd56d58","name":"Tech Attitude - 04 - Fr\u00e9d\u00e9ric Plais, Platform.sh","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 4 : Fr\u00e9d\u00e9ric Plais, cofondateur et CEO de Platform.sh","metadata":{"duration":2664.0456875,"channel":"joint stereo","audio_size":42625148,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-04-frederic-plais-platform-sh-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/893880c3d4c6749387ab77aea6f877740509ef09a16d5397f108d58b7443.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/f31d89814c5d7a5fb94b7945e14950663c394703e087a66e552493aa5777.jpg?alias=width400","date_create":{"date":"2018-12-03 12:00:14.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5978,"listen_id":5355178327677524,"listen_key":"8c663af6508b353cf258090c28c9adcca3380c2abee5a8cb491246d16b45c2ef","name":"Tech Attitude - 03 - Julien Codorniou, Facebook","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 3 : Julien Codorniou, vice-pr\u00e9sident Workplace by Facebook","metadata":{"duration":1594.0440625,"channel":"joint stereo","audio_size":25505122,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-03-julien-codorniou-facebook-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/580c0dba1f49f7d39d8fc022687226f90fb3687cd50af3ca7fcf734a9489.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/5aabcf1ded842d8c13ee76af9f38e7ee0f367848a62bb2180e53ef12e9c4.jpg?alias=width400","date_create":{"date":"2018-11-20 16:02:44.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5977,"listen_id":5355178327724789,"listen_key":"20865b5e7ee00a8c7427882f55b7f11fd64dfe0be1e3cc8e66ec28e6b0dbb16b","name":"Club Fintech - 02 - J\u00e9r\u00e9mie Rosselli, N26","description":"Le Journal du Net (JDN) vous propose une \u00e9mission 100% fintech. A chaque nouveau num\u00e9ro, nous recevons un acteur de la fintech, de la banque ou de l'assurance, un institutionnel ou toute entreprise qui investit cet \u00e9cosyst\u00e8me en plein boom. L'occasion de l'interroger sur ses actualit\u00e9s, le faire r\u00e9agir sur un \u00e9v\u00e9nement et d\u00e9crypter avec lui les tendances du secteur.\n\u00c9pisode 2 : J\u00e9r\u00e9mie Rosselli, directeur g\u00e9n\u00e9ral de N26 France.","metadata":{"duration":1514.7624375,"channel":"joint stereo","audio_size":24236616,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/club-fintech-02-jeremie-rosselli-n26-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/c8b94302e2fa7fb40e99383db413bb3f9bae7273801e62d248da14d388ae.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/01cc448dedb8fa2ffab2e2caf66d9eabc372023037210b610bb3ee584993.jpg?alias=width400","date_create":{"date":"2018-11-19 10:25:51.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5976,"listen_id":5355178327774685,"listen_key":"fcffea00876493993e6cd18cacb093bbec1fcfb14e05ef2268a4e4752689d8d4","name":"Club Fintech - 01 - C\u00e9line Lazorthes, Leetchi","description":"Le Journal du Net (JDN) vous propose une \u00e9mission 100% fintech. A chaque nouveau num\u00e9ro, nous recevons un acteur de la fintech, de la banque ou de l'assurance, un institutionnel ou toute entreprise qui investit cet \u00e9cosyst\u00e8me en plein boom. L'occasion de l'interroger sur ses actualit\u00e9s, le faire r\u00e9agir sur un \u00e9v\u00e9nement et d\u00e9crypter avec lui les tendances du secteur.\n\u00c9pisode 1 : C\u00e9line Lazorthes, fondatrice de Leetchi.","metadata":{"duration":1377.8546875,"channel":"joint stereo","audio_size":22046092,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/club-fintech-01-celine-lazorthes-leetchi-1","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/806f6d42836facb78417c692712167957854c1e3f3bd14794feaa44866cb.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/7d158c0f055ba88f2cfa36925a0c9b17ad87293060805da09010d8ab4580.jpg?alias=width400","date_create":{"date":"2018-11-16 15:39:46.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5975,"listen_id":5355178327824703,"listen_key":"d86852ca4d5ebd0433ab1024abdebe9f04a0103539480b737b2f5dca301e3699","name":"Tech Attitude - 02 - Octave Klaba, OVH","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 2 : Octave Klaba, PDG et fondateur d'OVH.","metadata":{"duration":3503.0465,"channel":"joint stereo","audio_size":56049161,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-02-octave-klaba-ovh-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/b1f5d52ed0cd15401f29037d1282599777ef17dc22dca1e434d571ff3ab6.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/8dc3f4fa553e3dffeec38ade17eed5aecab6e7875d4179856a68c45c9c51.jpg?alias=width400","date_create":{"date":"2018-07-09 10:00:04.000000","timezone_type":3,"timezone":"Europe\/Paris"}},{"rwm_episode_id":5974,"listen_id":5355178327872357,"listen_key":"c1697655e64ee50b6014cb3c290b3f43e2cd22f1f3484fe07752a5532ca8aa1d","name":"Tech Attitude - 01 - Yann Lecun, IA Facebook","description":"Le Journal du Net (JDN) vous propose un point sur les derni\u00e8res actus et tendances du secteur : IA, cloud, IoT, blockchain\u2026 \u00c0 chaque podcast, rencontre avec une personnalit\u00e9 fran\u00e7aise de la Tech qui vous fait part de sa vision.\n\u00c9pisode 1 : Yann Lecun, vice pr\u00e9sident et directeur scientifique de l'IA de Facebook.","metadata":{"duration":2087.288125,"channel":"joint stereo","audio_size":33397027,"bit_rate":128000,"sample_rate":44100},"artist":"S\u00e9rie Tech Attitude","album":"Saison 1","frontpage":"https:\/\/publishers.edisound.com\/fr\/podcast\/podcast-tech-attitude\/tech-attitude-01-yann-lecun-ia-facebook-2","url":"https:\/\/media.edisound.com\/medias\/episodes\/audio\/422cdbcc0ce1a6e4c8ae77ee4e46deacb0c5bb8b65065dda26b494fb13a8.downsized.mp3","cover_art_url":"https:\/\/media.edisound.com\/medias\/episodes\/image\/132dd979164dc3fb1855090417389022eb76ba757370672ac8173c4db2dc.jpg?alias=width400","date_create":{"date":"2018-06-26 18:02:22.000000","timezone_type":3,"timezone":"Europe\/Paris"}}];
+        const rwmp_htmlTemplate = `<div id="widget-container" class="edisound_widget-container bc1">
+   <!-- Blue Playlist Container -->
+   <div id="amplitude-container">
+      <!-- Amplitude Player -->
+      <div id="amplitude-player" class="cc5">
+         <div id="tools-container-mobile" class="tools-container">
+                        <span class="share rwmp-share">
+                    <svg width="25px" height="25px" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+                       <path class="cc2" d="M20.456 16.6683C19.1349 16.6683 17.9469 17.186 17.1159 18.0113L8.89623 13.7136C9.02408 13.3278 9.09333 12.9224 9.09333 12.5024C9.09333 12.0824 9.02408 11.6722 8.89623 11.2864L17.1159 6.98867C17.9469 7.81402 19.1349 8.3317 20.456 8.3317C22.9651 8.3317 25 6.46122 25 4.16585C25 1.87048 22.9651 0 20.456 0C17.9469 0 15.912 1.87048 15.912 4.16585C15.912 4.50772 15.9599 4.83493 16.0398 5.15237L7.70829 9.50869C6.88792 8.78101 5.77456 8.3317 4.54933 8.3317C2.04027 8.33659 0 10.2022 0 12.5024C0 14.8027 2.04027 16.6683 4.544 16.6683C5.76923 16.6683 6.88792 16.219 7.70296 15.4913L16.0345 19.8476C15.9493 20.1651 15.9067 20.4972 15.9067 20.8341C15.9067 23.1344 17.9469 25 20.4507 25C22.9544 25 24.9947 23.1295 24.9947 20.8341C25 18.5388 22.9651 16.6683 20.456 16.6683L20.456 16.6683Z"></path>
+                    </svg>
+              </span>
+              <span class="download">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25px" height="25px" viewBox="0 0 25 25" version="1.1">
+                <path class="cc2" d="M 18.679688 11.398438 C 18.554688 11.117188 18.277344 10.9375 17.96875 10.9375 L 14.84375 10.9375 L 14.84375 0.78125 C 14.84375 0.351562 14.492188 0 14.0625 0 L 10.9375 0 C 10.507812 0 10.15625 0.351562 10.15625 0.78125 L 10.15625 10.9375 L 7.03125 10.9375 C 6.722656 10.9375 6.445312 11.117188 6.320312 11.398438 C 6.191406 11.675781 6.242188 12 6.441406 12.234375 L 11.910156 18.484375 C 12.054688 18.65625 12.269531 18.753906 12.496094 18.753906 C 12.71875 18.753906 12.933594 18.65625 13.082031 18.484375 L 18.550781 12.238281 C 18.757812 12 18.808594 11.675781 18.679688 11.398438 Z M 18.679688 11.398438 "/>
+                <path class="cc2" d="M 21.09375 18.277344 L 21.09375 20.78125 C 21.09375 21.382812 20.605469 21.871094 20.003906 21.871094 L 4.996094 21.871094 C 4.394531 21.875 3.90625 21.386719 3.90625 20.785156 L 3.90625 18.28125 C 3.90625 17.675781 3.417969 17.1875 2.816406 17.1875 L 1.871094 17.1875 C 1.269531 17.1875 0.78125 17.675781 0.78125 18.277344 L 0.78125 23.4375 C 0.78125 24.300781 1.480469 25 2.34375 25 L 21.566406 25 C 23.03125 25 24.21875 23.8125 24.21875 22.347656 L 24.21875 18.28125 C 24.21875 17.679688 23.730469 17.191406 23.128906 17.191406 L 22.1875 17.191406 C 21.582031 17.1875 21.09375 17.675781 21.09375 18.277344 Z M 21.09375 18.277344 "/>
+                </svg>
+              </span>
+                               </div>
+         <div id="player-top-left">
+            <img data-amplitude-song-info="cover_art_url"/>
+            <svg class="amplitude-play-pause" width="100%" height="100%" viewbox="0 0 60 60" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+               <path d="M0 0h60v60H0V0z" fill="none"/>
+               <g clip-path="url(#b)">
+                  <path class="bc1" d="M43.625 29.803L23.646 17.425C22.189 16.474 21 17.173 21 18.988V43.01c0 1.811 1.188 2.517 2.646 1.561l19.979-12.374s.711-.5.711-1.197c0-.7-.711-1.198-.711-1.198z" fill="#F2F2F2" fill-rule="evenodd"/>
+               </g>
+            </svg>
+         </div>
+         <div id="player-top-right">
+            <div id="tools-container-desktop" class="tools-container">
+                         <span class="share rwmp-share">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" viewBox="0 0 12 12" version="1.1">
+                    <path class="cc3" style=" stroke:none;" d="M 9.492188 8 C 8.910156 8 8.386719 8.246094 8.023438 8.644531 L 4.40625 6.582031 C 4.460938 6.394531 4.492188 6.203125 4.492188 6 C 4.492188 5.796875 4.460938 5.601562 4.40625 5.417969 L 8.023438 3.355469 C 8.386719 3.75 8.910156 4 9.492188 4 C 10.597656 4 11.492188 3.101562 11.492188 2 C 11.492188 0.898438 10.597656 0 9.492188 0 C 8.386719 0 7.492188 0.898438 7.492188 2 C 7.492188 2.164062 7.515625 2.320312 7.550781 2.472656 L 3.882812 4.5625 C 3.523438 4.214844 3.03125 4 2.492188 4 C 1.390625 4 0.492188 4.894531 0.492188 6 C 0.492188 7.105469 1.390625 8 2.492188 8 C 3.03125 8 3.523438 7.785156 3.882812 7.433594 L 7.546875 9.523438 C 7.507812 9.675781 7.492188 9.835938 7.492188 10 C 7.492188 11.101562 8.386719 11.996094 9.488281 11.996094 C 10.589844 11.996094 11.488281 11.101562 11.488281 10 C 11.492188 8.898438 10.597656 8 9.492188 8 Z M 9.492188 8 "/>
+                </svg>
+             </span>
+               <span class="download">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" viewBox="0 0 12 12" version="1.1">
+                    <path class="cc3" style="stroke:none;" d="M 8.96875 5.46875 C 8.90625 5.335938 8.773438 5.25 8.625 5.25 L 7.125 5.25 L 7.125 0.375 C 7.125 0.167969 6.957031 0 6.75 0 L 5.25 0 C 5.042969 0 4.875 0.167969 4.875 0.375 L 4.875 5.25 L 3.375 5.25 C 3.226562 5.25 3.09375 5.335938 3.03125 5.46875 C 2.972656 5.605469 2.996094 5.761719 3.089844 5.875 L 5.714844 8.875 C 5.785156 8.957031 5.890625 9.003906 5.996094 9.003906 C 6.105469 9.003906 6.207031 8.957031 6.277344 8.875 L 8.902344 5.875 C 9.003906 5.761719 9.027344 5.605469 8.96875 5.46875 Z M 8.96875 5.46875 "/>
+                    <path class="cc3" style="stroke:none;" d="M 10.125 8.773438 L 10.125 9.976562 C 10.125 10.261719 9.890625 10.496094 9.601562 10.496094 L 2.398438 10.496094 C 2.109375 10.5 1.875 10.265625 1.875 9.976562 L 1.875 8.773438 C 1.875 8.484375 1.640625 8.25 1.351562 8.25 L 0.898438 8.25 C 0.609375 8.25 0.375 8.484375 0.375 8.773438 L 0.375 11.25 C 0.375 11.664062 0.710938 12 1.125 12 L 10.351562 12 C 11.054688 12 11.625 11.429688 11.625 10.726562 L 11.625 8.773438 C 11.625 8.488281 11.390625 8.253906 11.101562 8.253906 L 10.648438 8.253906 C 10.359375 8.25 10.125 8.484375 10.125 8.773438 Z M 10.125 8.773438 "/>
+                </svg>
+             </span>
+                                       </div>
+            <div id="meta-container">
+               <div class="song-artist-album">
+                  <span data-amplitude-song-info="artist" class="song-serie cc3">Série Tech Attitude</span>
+               </div>
+               <div class="msg">sponsorisé</div>
+               <div data-amplitude-song-info="name" class="song-name cc4"></div>
+            </div>
+            <div id="time-container">
+               <div id="progress-container">
+                  <input type="range" class="amplitude-song-slider" step=".1"/>
+                  <progress id="song-played-progress" class="amplitude-song-played-progress bc1"></progress>
+               </div>
+               <span class="current-time cc3">
+             <span class="amplitude-current-minutes" ></span>:<span class="amplitude-current-seconds"></span>
+             </span>
+               <span class="duration cc4">
+             <span class="amplitude-duration-minutes"></span>:<span class="amplitude-duration-seconds"></span>
+             </span>
+            </div>
+            <div id="control-container">
+               <div id="central-control-container">
+                  <div id="central-controls">
+                     <div id="volume-controls">
+                        <div class="amplitude-mute amplitude-not-muted">
+                           <svg style="display: none;" class="svg edisound_widget-container__not-muted" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 61 48.4" xml:space="preserve">
+                         <g>
+                            <path class="cc2" d="M30.5,43.2c0,1.1-0.6,2-1.6,2.5c-0.4,0.2-0.8,0.3-1.2,0.3c-0.6,0-1.3-0.2-1.8-0.6L10.8,32.8H2.8
+                               C1.2,32.8,0,31.6,0,30V19c0-1.5,1.2-2.8,2.8-2.8h8.1L26,3.7c0.8-0.7,2-0.8,2.9-0.4c1,0.5,1.6,1.4,1.6,2.5L30.5,43.2L30.5,43.2z
+                                M41.1,38.9c-0.1,0-0.1,0-0.2,0c-0.7,0-1.4-0.3-2-0.8l-0.4-0.4c-1-1-1.1-2.5-0.3-3.6c2.1-2.8,3.2-6.1,3.2-9.6
+                               c0-3.7-1.2-7.2-3.6-10.1c-0.9-1.1-0.8-2.7,0.2-3.7l0.4-0.4c0.6-0.6,1.3-0.9,2.1-0.8c0.8,0,1.5,0.4,2,1c3.3,4,5,8.8,5,14
+                               c0,4.8-1.5,9.4-4.4,13.3C42.7,38.4,41.9,38.8,41.1,38.9z M52.6,47.5c-0.5,0.6-1.2,0.9-2,1c0,0-0.1,0-0.1,0c-0.7,0-1.4-0.3-2-0.8
+                               l-0.4-0.4c-1-1-1.1-2.6-0.2-3.7c4.5-5.3,6.9-12.1,6.9-19c0-7.2-2.6-14.2-7.4-19.6c-1-1.1-0.9-2.8,0.1-3.8L48,0.8
+                               C48.5,0.3,49.2,0,50,0c0.8,0,1.5,0.4,2,0.9c5.8,6.5,9,14.9,9,23.6C61,32.9,58,41.1,52.6,47.5z"/>
+                         </g>
+                         </svg>
+                           <svg style="display: none;" class="svg edisound_widget-container__muted" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 61 48.4" xml:space="preserve">
+                         <g>
+                            <path class="cc2" d="M30.5,43.2c0,1.1-0.6,2-1.6,2.5c-0.4,0.2-0.8,0.3-1.2,0.3c-0.6,0-1.3-0.2-1.8-0.6L10.8,32.8H2.8
+                               C1.2,32.8,0,31.6,0,30V19c0-1.5,1.2-2.8,2.8-2.8h8.1L26,3.7c0.8-0.7,2-0.8,2.9-0.4c1,0.5,1.6,1.4,1.6,2.5L30.5,43.2L30.5,43.2z M36.4,15.8L36.4,15.8l8.4,8.4l-8.4,8.4c-0.7,0.7-0.7,1.8,0,2.5l1.1,1.1c0.7,0.7,1.8,0.7,2.5,0l8.4-8.4
+                                  l8.4,8.4c0.7,0.7,1.8,0.7,2.5,0l1.1-1.1c0.7-0.7,0.7-1.8,0-2.5L52,24.2l8.5-8.5c0.7-0.7,0.7-1.8,0-2.5l-1.1-1.1
+                                  c-0.7-0.7-1.8-0.7-2.5,0l-8.5,8.5L40,12.2c-0.7-0.7-1.8-0.7-2.5,0l-1.1,1.1C35.7,13.9,35.7,15.1,36.4,15.8z"/>
+                         </g>
+                         </svg>
+                        </div>
+                        <input type="range" class="amplitude-volume-slider">
+                     </div>
+                     <div class="rwm-prev" id="previous">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 493.5 493.5">
+                           <path class="cc2" d="M447.1.2C437 .2 426.2 4.3 415 12.1L140.9 201c-17.6 12.2-27.3 28.5-27.3 46.1s9.8 33.9 27.4 46.1l274.3 188.7c11.3 7.8 22.6 11.7 32.6 11.7 10.8 0 18.9-4.4 25.3-13 6.3-8.5 8.7-20.5 8.7-35v-397C482 18.7 469.2.2 447.1.2zM53.1 0H39.9C25 0 11.6 12.1 11.6 27v439.4c0 14.9 13 27.1 27.9 27.1h.5l12.9-.1c14.9 0 28.1-12.2 28.1-27V27C81 12.1 68 0 53.1 0z"/>
+                        </svg>
+                     </div>
+                     <div id="back" class="back">
+                        <svg version="1.1" id="Calque_1" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"  viewBox="0 0 35.7 40.7" style="enable-background:new 0 0 35.7 40.7;" xml:space="preserve">
+                      <path class="cc2" d="M29.7,6c-3.9-3.9-9-6-14.4-6C10.5,0,5.8,1.7,2.1,4.8V1c0-0.5-0.4-1-1.1-1S0,0.5,0,1v6.8c0,0.7,0.5,0.8,1,0.8
+                         h6.9C8.5,8.6,9,8.2,9,7.5c0-0.5-0.4-1-1.1-1H3.5C6.8,3.6,11,2,15.4,2c4.9,0,9.5,1.9,12.9,5.3c3.4,3.4,5.3,8,5.3,12.9
+                         c0,4.9-1.9,9.5-5.3,12.9c-3.4,3.4-8,5.3-12.9,5.3c-4.9,0-9.5-1.9-12.9-5.3c-0.4-0.4-1.2-0.4-1.6,0c-0.4,0.4-0.4,1.2,0,1.6
+                         c3.9,3.9,9,6,14.4,6c5.4,0,10.5-2.1,14.4-6c3.9-3.9,6-9,6-14.4C35.7,14.9,33.6,9.8,29.7,6z"/>
+                           <g>
+                              <path class="cc2" d="M7.7,14.5C7.9,14.7,8,15,8,15.3v10.9c0,0.3-0.1,0.6-0.4,0.8c-0.2,0.2-0.5,0.3-0.9,0.3S6.1,27.2,5.8,27
+                            c-0.2-0.2-0.3-0.5-0.3-0.8v-9l-1.2,0.7c-0.1,0.2-0.3,0.3-0.5,0.3c-0.3,0-0.6-0.1-0.8-0.4S2.7,17.3,2.7,17c0-0.2,0.1-0.4,0.2-0.6
+                            C3,16.2,3.1,16.1,3.3,16l2.9-1.7c0.2-0.1,0.5-0.2,0.8-0.2C7.2,14.2,7.4,14.3,7.7,14.5z"/>
+                              <path class="cc2" d="M12.5,26.7c-0.8-0.6-1.3-1.4-1.7-2.4s-0.6-2.2-0.6-3.6s0.2-2.5,0.6-3.6c0.4-1,1-1.8,1.7-2.4s1.7-0.8,2.7-0.8
+                            s2,0.3,2.7,0.8c0.8,0.6,1.3,1.4,1.7,2.4c0.4,1,0.6,2.2,0.6,3.6s-0.2,2.5-0.6,3.6s-1,1.8-1.7,2.4c-0.8,0.6-1.7,0.9-2.7,0.9
+                            S13.2,27.3,12.5,26.7z M17.1,24.2c0.5-0.8,0.7-1.9,0.7-3.4s-0.2-2.6-0.7-3.4s-1.1-1.2-1.9-1.2s-1.4,0.4-1.9,1.2
+                            c-0.5,0.8-0.7,1.9-0.7,3.4s0.2,2.6,0.7,3.4s1.1,1.2,1.9,1.2C16,25.3,16.6,24.9,17.1,24.2z"/>
+                              <path class="cc2" d="M21.5,25.3c0-0.3,0.2-0.6,0.5-0.8c0.2-0.1,0.4-0.2,0.5-0.2c0.3,0,0.5,0.1,0.8,0.4c0.4,0.4,0.8,0.7,1.2,0.9
+                            c0.4,0.2,0.9,0.3,1.5,0.3c1,0,1.5-0.4,1.5-1.1c0-0.4-0.2-0.6-0.5-0.8s-0.9-0.4-1.6-0.6c-0.7-0.2-1.3-0.4-1.8-0.6s-0.9-0.5-1.2-0.9
+                            c-0.3-0.4-0.5-1-0.5-1.7c0-0.6,0.2-1.1,0.5-1.6c0.3-0.4,0.8-0.8,1.4-1s1.2-0.4,1.8-0.4s1.3,0.1,1.9,0.4c0.6,0.2,1.1,0.6,1.5,1.1
+                            c0.2,0.2,0.2,0.4,0.2,0.7c0,0.3-0.1,0.5-0.4,0.7c-0.2,0.1-0.4,0.2-0.6,0.2c-0.3,0-0.5-0.1-0.7-0.3c-0.2-0.3-0.5-0.5-0.9-0.7
+                            s-0.8-0.2-1.2-0.2c-1,0-1.4,0.3-1.4,1c0,0.3,0.1,0.5,0.3,0.7s0.4,0.3,0.7,0.4c0.3,0.1,0.7,0.2,1.1,0.3c0.7,0.2,1.2,0.4,1.7,0.6
+                            s0.8,0.5,1.2,0.9c0.3,0.4,0.5,1,0.5,1.6s-0.2,1.2-0.5,1.6c-0.4,0.5-0.8,0.8-1.4,1c-0.6,0.2-1.2,0.4-1.8,0.4c-0.8,0-1.6-0.1-2.3-0.4
+                            s-1.3-0.7-1.8-1.3C21.5,25.7,21.5,25.5,21.5,25.3z"/>
+                           </g>
+                      </svg>
+                     </div>
+                     <div class="amplitude-play-pause cbc2" id="play-pause">
+                        <svg class="svg edisound_widget-container__play" width="69" height="69" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                           <path class="cc5" d="M43.625 29.803L23.646 17.426C22.189 16.474 21 17.173 21 18.988V43.01c0 1.812 1.188 2.518 2.646 1.562l19.979-12.375s.711-.5.711-1.197c0-.7-.711-1.198-.711-1.198z" fill="#888" fill-rule="evenodd"/>
+                        </svg>
+                        <svg class="svg edisound_widget-container__pause" width="69" height="69" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                           <g fill="none" fill-rule="evenodd">
+                              <path class="cc5" d="M40.587 16.61h-4.33a2.19 2.19 0 00-2.188 2.201v23.592c0 1.221.979 2.207 2.188 2.207h4.33a2.193 2.193 0 002.188-2.207V18.811a2.186 2.186 0 00-2.188-2.201zM24.2 16.61h-4.328c-1.211 0-2.193.98-2.193 2.201v23.592c0 1.221.982 2.207 2.193 2.207H24.2a2.195 2.195 0 002.188-2.207V18.811A2.193 2.193 0 0024.2 16.61z" fill="#05308C"/>
+                           </g>
+                        </svg>
+                     </div>
+                     <div id="forward" class="forward">
+                        <svg version="1.1" id="Calque_1" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 35.7 40.7" style="enable-background:new 0 0 35.7 40.7;" xml:space="preserve">
+                         <path class="cc2" d="M35.5,0.5C35.4,0.2,35,0,34.7,0c-0.7,0-1.1,0.5-1.1,1v3.8C29.9,1.7,25.3,0,20.4,0C14.9,0,9.8,2.1,6,6
+                            c-3.9,3.9-6,9-6,14.4c0,5.4,2.1,10.5,6,14.4c3.9,3.9,9,6,14.4,6s10.5-2.1,14.4-6c0.4-0.4,0.4-1.2,0-1.6c-0.4-0.4-1.2-0.4-1.6,0
+                            c-3.4,3.4-8,5.3-12.9,5.3s-9.5-1.9-12.9-5.3C3.9,29.7,2,25.1,2,20.2c0-4.9,1.9-9.5,5.3-12.9S15.4,2,20.2,2c4.4,0,8.6,1.6,12,4.5
+                            h-4.5c-0.7,0-1,0.5-1,1c0,0.7,0.5,1.1,1,1.1h6.7c0.7,0,1-0.5,1-1.1V1.1C35.6,0.9,35.6,0.7,35.5,0.5z"/>
+                           <g>
+                              <path class="cc2" d="M13.9,14.5c0.2,0.2,0.3,0.5,0.3,0.8v10.9c0,0.3-0.1,0.6-0.4,0.8c-0.2,0.2-0.5,0.3-0.9,0.3S12.3,27.2,12,27
+                               c-0.2-0.2-0.3-0.5-0.3-0.8v-9l-1.2,0.7c-0.1,0.2-0.3,0.3-0.5,0.3c-0.3,0-0.6-0.1-0.8-0.4S8.8,17.3,8.8,17c0-0.2,0.1-0.4,0.2-0.6
+                               c0.1-0.2,0.2-0.3,0.4-0.4l2.9-1.7c0.2-0.1,0.5-0.2,0.8-0.2C13.4,14.2,13.6,14.3,13.9,14.5z"/>
+                              <path class="cc2" d="M18.6,26.7c-0.8-0.6-1.3-1.4-1.7-2.4s-0.6-2.2-0.6-3.6s0.2-2.5,0.6-3.6c0.4-1,1-1.8,1.7-2.4s1.7-0.8,2.7-0.8
+                               s2,0.3,2.7,0.8c0.8,0.6,1.3,1.4,1.7,2.4c0.4,1,0.6,2.2,0.6,3.6s-0.2,2.5-0.6,3.6s-1,1.8-1.7,2.4c-0.8,0.6-1.7,0.9-2.7,0.9
+                               S19.4,27.3,18.6,26.7z M23.2,24.2c0.5-0.8,0.7-1.9,0.7-3.4s-0.2-2.6-0.7-3.4s-1.1-1.2-1.9-1.2s-1.4,0.4-1.9,1.2
+                               c-0.5,0.8-0.7,1.9-0.7,3.4s0.2,2.6,0.7,3.4s1.1,1.2,1.9,1.2C22.1,25.3,22.8,24.9,23.2,24.2z"/>
+                              <path class="cc2" d="M27.6,25.3c0-0.3,0.2-0.6,0.5-0.8c0.2-0.1,0.4-0.2,0.5-0.2c0.3,0,0.5,0.1,0.8,0.4c0.4,0.4,0.8,0.7,1.2,0.9
+                               c0.4,0.2,0.9,0.3,1.5,0.3c1,0,1.5-0.4,1.5-1.1c0-0.4-0.2-0.6-0.5-0.8s-0.9-0.4-1.6-0.6c-0.7-0.2-1.3-0.4-1.8-0.6s-0.9-0.5-1.2-0.9
+                               c-0.3-0.4-0.5-1-0.5-1.7c0-0.6,0.2-1.1,0.5-1.6c0.3-0.4,0.8-0.8,1.4-1s1.2-0.4,1.8-0.4s1.3,0.1,1.9,0.4c0.6,0.2,1.1,0.6,1.5,1.1
+                               c0.2,0.2,0.2,0.4,0.2,0.7c0,0.3-0.1,0.5-0.4,0.7c-0.2,0.1-0.4,0.2-0.6,0.2c-0.3,0-0.5-0.1-0.7-0.3c-0.2-0.3-0.5-0.5-0.9-0.7
+                               s-0.8-0.2-1.2-0.2c-1,0-1.4,0.3-1.4,1c0,0.3,0.1,0.5,0.3,0.7s0.4,0.3,0.7,0.4c0.3,0.1,0.7,0.2,1.1,0.3c0.7,0.2,1.2,0.4,1.7,0.6
+                               s0.8,0.5,1.2,0.9c0.3,0.4,0.5,1,0.5,1.6s-0.2,1.2-0.5,1.6c-0.4,0.5-0.8,0.8-1.4,1c-0.6,0.2-1.2,0.4-1.8,0.4c-0.8,0-1.6-0.1-2.3-0.4
+                               s-1.3-0.7-1.8-1.3C27.6,25.7,27.6,25.5,27.6,25.3z"/>
+                           </g>
+                         </svg>
+                     </div>
+                     <div class="rwm-next" id="next">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 493.5 493.5">
+                           <path class="cc2" d="M46.4 493.3c10.1 0 20.9-4.1 32.1-11.9l274.1-188.8c17.6-12.2 27.3-28.5 27.3-46.1s-9.8-33.9-27.4-46.1L78.1 11.7C66.8 4 55.6 0 45.5 0 34.8 0 26.6 4.4 20.2 13c-6.3 8.5-8.7 20.5-8.7 35v397c0 29.8 12.8 48.3 34.9 48.3zM440.4 493.5h13.2c14.9 0 28.3-12.1 28.3-27V27.1c0-14.9-13-27.1-27.9-27.1h-.5l-12.9.1c-14.9 0-28.1 12.2-28.1 27v439.4c.1 14.9 13 27 27.9 27z"/>
+                        </svg>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div id="amplitude-playlist" class="amplitude-playlist cc5">
+                  <span class="title-playlist cc4">Recommandations</span>
+                        </div>
+      <div class="playlist-blur"></div>
+   </div>
+   <div id="widget-footer">
+   <a href="https://www.edisound.com" target="_blank">
+       <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="39pt" height="18pt" viewBox="0 0 39 18" version="1.1">
+           <g id="surface1">
+               <path style="fill-rule:nonzero;fill:rgb(14.117647%,22.352941%,48.627451%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(14.117647%,22.352941%,48.627451%);stroke-opacity:1;stroke-miterlimit:4;" d="M 851.301683 369.506727 C 834.527043 352.840712 814.658053 339.475694 792.834736 330.297309 C 770.197115 320.716363 745.930889 315.885634 721.338942 315.966146 C 696.746995 315.805122 672.317909 320.796875 649.680288 330.458333 C 605.545072 349.378689 570.448618 384.481988 551.556791 428.602648 C 543.250901 447.845052 539.179387 459.35829 538.039363 480.935547 L 486.168269 480.935547 L 456.609075 447.361979 C 451.886118 441.806641 444.557392 439.069227 437.310096 440.27691 C 430.388522 440.357422 424.28125 444.78559 421.919772 451.226562 L 408.728065 510.080946 L 396.269231 565.795356 L 386.497596 510.805556 L 365 389.232205 C 363.859976 383.032769 357.019832 378.20204 348.388221 377.638455 C 339.67518 377.07487 331.776442 381.019965 329.170673 386.977865 L 274.123798 514.509115 L 257.67488 552.832899 L 249.20613 515.314236 L 236.828726 459.841363 C 234.385817 453.239366 228.034255 448.811198 221.03125 448.730686 C 213.702524 447.684028 206.373798 450.662977 201.813702 456.540365 L 171.195913 506.377387 L 113.380409 506.377387 C 103.283053 506.377387 94.977163 512.335286 94.977163 519.661892 C 94.977163 527.06901 103.283053 533.02691 113.380409 533.02691 L 183.166166 533.02691 C 189.680589 533.348958 196.032151 530.370009 199.940805 525.136719 L 205.070913 516.682943 L 210.363882 508.229167 L 212.236779 516.521918 L 233.815805 612.814453 C 235.20012 618.933377 242.121695 623.522569 250.671875 623.92513 C 258.244892 624.810764 265.655048 621.187717 269.563702 614.666233 L 313.291767 513.22092 L 339.186599 453.158854 L 349.609675 512.013238 L 375.830228 660.155599 C 376.970252 666.757595 384.6247 671.668837 393.744892 671.829861 L 394.070613 671.829861 C 403.109375 671.829861 410.763822 667.079644 412.229567 660.638672 L 446.348858 508.953776 L 449.198918 495.991319 L 457.993389 508.551215 L 458.400541 509.1148 C 462.390625 514.026042 468.497897 516.763455 474.849459 516.441406 L 537.876502 516.441406 C 539.342248 535.683811 543.983774 554.443142 551.638221 572.155816 C 570.367188 616.356988 605.545072 651.621311 649.761719 670.461155 C 672.317909 680.203125 696.746995 685.194878 721.338942 685.033854 C 750.409555 685.033854 775.652945 679.881076 796.90625 669.736545 C 818.078125 659.592014 835.667067 646.951606 849.591647 631.976345 C 855.536058 626.823568 858.548978 621.026693 858.711839 614.58572 C 858.95613 608.708333 857.246094 602.830946 853.826022 598.000217 C 850.731671 592.847439 846.904447 589.546441 842.262921 588.01671 C 834.282752 585.198785 825.895433 586.970052 817.182392 593.411024 C 806.352163 606.534505 792.346154 616.679036 775.245793 623.92513 C 758.226863 631.090712 739.823618 634.794271 721.338942 634.713759 C 705.378606 634.874783 689.4997 631.976345 674.597957 626.259983 C 660.266226 620.785156 646.993089 612.894965 635.429988 602.830946 C 623.948317 592.927951 614.258113 581.012153 607.010817 567.727648 C 599.4378 554.040582 594.633413 538.984809 592.679087 523.526476 L 881.67518 523.526476 C 888.841046 523.526476 894.704026 521.191623 899.264123 516.521918 C 903.742788 511.852214 906.185697 505.572266 906.022837 499.131293 C 905.859976 474.575087 900.729868 450.340929 890.958233 427.878038 C 881.51232 406.139757 868.076322 386.333767 851.301683 369.506727 Z M 591.131911 481.016059 C 592.841947 465.155165 597.483474 449.777344 604.89363 435.607205 C 612.059495 421.839627 621.7497 409.521267 633.475661 399.296224 C 645.445913 388.990668 659.044772 380.778429 673.865084 375.142578 C 689.336839 369.184679 705.867188 366.125217 722.478966 366.286241 C 755.132512 366.125217 786.646034 377.799479 811.319411 399.1352 C 823.208233 409.360243 833.061298 421.678602 840.552885 435.446181 C 848.207332 449.535807 853.011719 464.994141 854.640325 481.016059 Z M 591.131911 481.016059 " transform="matrix(0.0479705,0,0,0.0485175,-4.509225,-15.283019)"/>
+           </g>
+       </svg>
+  </a>
+   </div>
+</div>
+`;
+    
+    const rwmp_share_htmlTemplate = `<!--div class="rwm-podcast-player__share"-->
+<ul class="rwmp__share-menu">
+   <li class="rwmp__share-menu-item rwmp__share-menu-item--twitter">
+      <a class="js-sharing-popup-twitter" data-share-type="twitter" title="Partager sur Twitter">
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> 
+            <path opacity="0" d="M0 0h24v24H0z"></path> 
+            <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"></path> 
+         </svg>
+      </a>
+   </li>
+   <li class="rwmp__share-menu-item rwmp__share-menu-item--facebook">
+      <a class="js-sharing-popup-facebook" data-share-type="facebook" title="Partager sur Facebook">
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> 
+            <path d="M16.75,9H13.5V7a1,1,0,0,1,1-1h2V3H14a4,4,0,0,0-4,4V9H8v3h2v9h3.5V12H16Z"></path> 
+         </svg>
+      </a>
+   </li>
+   <li class="rwmp__share-menu-item  rwmp__share-menu-item--linkedin">
+      <a class="js-sharing-popup-linkedin" data-share-type="linkedin" title="Partager sur Linkedin">
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <rect height="11" width="4" x="3" y="9"></rect>
+            <circle cx="5" cy="5" r="2"></circle>
+            <path d="M16.5,8.25A4.47251,4.47251,0,0,0,13,9.95343V9H9V20h4V13a2,2,0,0,1,4,0v7h4V12.75A4.5,4.5,0,0,0,16.5,8.25Z"></path>
+         </svg>
+      </a>
+   </li>
+   <li class="rwmp__share-menu-item rwmp__share-menu-item--link rwmp__share__popin">
+      <span class="rwmp__share__popintext" id="rwmp__share__copy-link-popin">Le lien a été copié  dans le presse-papier</span>
+      <a class="js-sharing-copy-link" data-share-type="copy-link" title="Copier le lien">
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="0 0 56 72">
+            <path d="M29.518 12.25l-8.705 8.704a13.624 13.624 0 0 0-2.881 4.26 13.617 13.617 0 0 0-1.128 5.377c0 5.48 3.076 8.778 4.01 9.77 2.346 2.494 7.014 3.983 7.416 3.674.637-.49 2.665-3.002.174-5.764-.452-.502-3.605-.852-5.154-4.667-.836-2.059-.753-4.129.076-6.055a7.8 7.8 0 0 1 1.647-2.434l8.705-8.704c3.057-3.057 8.032-3.057 11.089 0 3.057 3.057 3.057 8.032 0 11.089l-4.175 4.174a17.549 17.549 0 0 1 2.37 5.947l5.963-5.962c5.35-5.351 5.35-14.057 0-19.408C43.574 6.9 34.869 6.9 29.518 12.25z"></path>
+            <path d="M26.357 59.768l9.01-9.01a13.624 13.624 0 0 0 2.881-4.26 13.617 13.617 0 0 0 1.128-5.377c0-5.48-3.076-8.778-4.01-9.77-2.346-2.494-7.014-3.983-7.416-3.674-.637.49-2.665 3.002-.174 5.764.452.502 3.605.852 5.154 4.667.836 2.059.753 4.129-.076 6.055a7.8 7.8 0 0 1-1.647 2.434l-9.01 9.01c-3.057 3.057-8.032 3.057-11.089 0-3.057-3.057-3.057-8.032 0-11.089l4.479-4.479a17.549 17.549 0 0 1-2.37-5.947L6.95 40.36c-5.35 5.351-5.35 14.057 0 19.408 5.351 5.35 14.057 5.35 19.407 0z"></path>
+         </svg>
+      </a>
+   </li>
+   <li class="rwmp__share-menu-item rwmp__share-menu-item--email">
+      <a class="js-sharing-email" data-share-type="email" title="Envoyer le lien par email">
+         <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-hidden="true" data-icon="envelope" data-prefix="fas" id="ember68" class="svg-inline--fa fa-envelope fa-w-16 ember-view"><path d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V400c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5 0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"></path>
+         </svg>
+      </a>
+   </li>
+</ul>
+<div class="rwmp__share-menu-item--close">
+   <svg width="12" height="12"  viewBox="0 0 329.26933 329" width="329pt" xmlns="http://www.w3.org/2000/svg"><path d="m194.800781 164.769531 128.210938-128.214843c8.34375-8.339844 8.34375-21.824219 0-30.164063-8.339844-8.339844-21.824219-8.339844-30.164063 0l-128.214844 128.214844-128.210937-128.214844c-8.34375-8.339844-21.824219-8.339844-30.164063 0-8.34375 8.339844-8.34375 21.824219 0 30.164063l128.210938 128.214843-128.210938 128.214844c-8.34375 8.339844-8.34375 21.824219 0 30.164063 4.15625 4.160156 9.621094 6.25 15.082032 6.25 5.460937 0 10.921875-2.089844 15.082031-6.25l128.210937-128.214844 128.214844 128.214844c4.160156 4.160156 9.621094 6.25 15.082032 6.25 5.460937 0 10.921874-2.089844 15.082031-6.25 8.34375-8.339844 8.34375-21.824219 0-30.164063zm0 0"/></svg>
+</div>
+ <!--/div-->`;
+    const rwmpContainerEl = document.querySelector(".rwm-podcast-player[data-random='iaPuphJLlL']");
+
+        rwmpContainerEl.classList.add('small');
+    
+    if (displayReduced) {
+        var rwmp_reduced_htmlTemplate = `<!--div class="player-reduced"-->
+<div class="player-reduced-container">
+   <div class="control-container">
+      <!--
+         <div id="central-control-container">
+            <div id="central-controls">
+               <div class="amplitude-prev" id="previous"></div>
+               <div class="amplitude-play-pause" id="play-pause"></div>
+               <div class="amplitude-next" id="next"></div>
+            </div>
+         </div>
+      -->
+      <div class="rwm-prev" id="previous">
+         <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 493.5 493.5" style="enable-background:new 0 0 493.5 493.5;" xml:space="preserve">
+         <g>
+            <g>
+               <path class="cc2" d="M447.1,0.2c-10.1,0-20.9,4.1-32.1,11.9L140.9,201c-17.6,12.2-27.3,28.5-27.3,46.1c0,17.6,9.8,33.9,27.4,46.1
+                  l274.3,188.7c11.3,7.8,22.6,11.7,32.6,11.7h0c10.8,0,18.9-4.4,25.3-13c6.3-8.5,8.7-20.5,8.7-35v-397C482,18.7,469.2,0.2,447.1,0.2
+                  z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="cc2" d="M53.1,0L39.9,0C25,0,11.6,12.1,11.6,27v439.4c0,14.9,13,27.1,27.9,27.1h0.5l12.9-0.1
+                  c14.9,0,28.1-12.2,28.1-27V27C81,12.1,68,0,53.1,0z"/>
+            </g>
+         </g>
+         </svg>
+      </div>
+
+      <div class="amplitude-back" id="back">
+         <svg version="1.1" id="Calque_1" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"  viewBox="0 0 35.7 40.7" style="enable-background:new 0 0 35.7 40.7;" xml:space="preserve">
+         <path class="cc2" d="M29.7,6c-3.9-3.9-9-6-14.4-6C10.5,0,5.8,1.7,2.1,4.8V1c0-0.5-0.4-1-1.1-1S0,0.5,0,1v6.8c0,0.7,0.5,0.8,1,0.8
+            h6.9C8.5,8.6,9,8.2,9,7.5c0-0.5-0.4-1-1.1-1H3.5C6.8,3.6,11,2,15.4,2c4.9,0,9.5,1.9,12.9,5.3c3.4,3.4,5.3,8,5.3,12.9
+            c0,4.9-1.9,9.5-5.3,12.9c-3.4,3.4-8,5.3-12.9,5.3c-4.9,0-9.5-1.9-12.9-5.3c-0.4-0.4-1.2-0.4-1.6,0c-0.4,0.4-0.4,1.2,0,1.6
+            c3.9,3.9,9,6,14.4,6c5.4,0,10.5-2.1,14.4-6c3.9-3.9,6-9,6-14.4C35.7,14.9,33.6,9.8,29.7,6z"/>
+         <g>
+            <path class="cc2" d="M7.7,14.5C7.9,14.7,8,15,8,15.3v10.9c0,0.3-0.1,0.6-0.4,0.8c-0.2,0.2-0.5,0.3-0.9,0.3S6.1,27.2,5.8,27
+               c-0.2-0.2-0.3-0.5-0.3-0.8v-9l-1.2,0.7c-0.1,0.2-0.3,0.3-0.5,0.3c-0.3,0-0.6-0.1-0.8-0.4S2.7,17.3,2.7,17c0-0.2,0.1-0.4,0.2-0.6
+               C3,16.2,3.1,16.1,3.3,16l2.9-1.7c0.2-0.1,0.5-0.2,0.8-0.2C7.2,14.2,7.4,14.3,7.7,14.5z"/>
+            <path class="cc2" d="M12.5,26.7c-0.8-0.6-1.3-1.4-1.7-2.4s-0.6-2.2-0.6-3.6s0.2-2.5,0.6-3.6c0.4-1,1-1.8,1.7-2.4s1.7-0.8,2.7-0.8
+               s2,0.3,2.7,0.8c0.8,0.6,1.3,1.4,1.7,2.4c0.4,1,0.6,2.2,0.6,3.6s-0.2,2.5-0.6,3.6s-1,1.8-1.7,2.4c-0.8,0.6-1.7,0.9-2.7,0.9
+               S13.2,27.3,12.5,26.7z M17.1,24.2c0.5-0.8,0.7-1.9,0.7-3.4s-0.2-2.6-0.7-3.4s-1.1-1.2-1.9-1.2s-1.4,0.4-1.9,1.2
+               c-0.5,0.8-0.7,1.9-0.7,3.4s0.2,2.6,0.7,3.4s1.1,1.2,1.9,1.2C16,25.3,16.6,24.9,17.1,24.2z"/>
+            <path class="cc2" d="M21.5,25.3c0-0.3,0.2-0.6,0.5-0.8c0.2-0.1,0.4-0.2,0.5-0.2c0.3,0,0.5,0.1,0.8,0.4c0.4,0.4,0.8,0.7,1.2,0.9
+               c0.4,0.2,0.9,0.3,1.5,0.3c1,0,1.5-0.4,1.5-1.1c0-0.4-0.2-0.6-0.5-0.8s-0.9-0.4-1.6-0.6c-0.7-0.2-1.3-0.4-1.8-0.6s-0.9-0.5-1.2-0.9
+               c-0.3-0.4-0.5-1-0.5-1.7c0-0.6,0.2-1.1,0.5-1.6c0.3-0.4,0.8-0.8,1.4-1s1.2-0.4,1.8-0.4s1.3,0.1,1.9,0.4c0.6,0.2,1.1,0.6,1.5,1.1
+               c0.2,0.2,0.2,0.4,0.2,0.7c0,0.3-0.1,0.5-0.4,0.7c-0.2,0.1-0.4,0.2-0.6,0.2c-0.3,0-0.5-0.1-0.7-0.3c-0.2-0.3-0.5-0.5-0.9-0.7
+               s-0.8-0.2-1.2-0.2c-1,0-1.4,0.3-1.4,1c0,0.3,0.1,0.5,0.3,0.7s0.4,0.3,0.7,0.4c0.3,0.1,0.7,0.2,1.1,0.3c0.7,0.2,1.2,0.4,1.7,0.6
+               s0.8,0.5,1.2,0.9c0.3,0.4,0.5,1,0.5,1.6s-0.2,1.2-0.5,1.6c-0.4,0.5-0.8,0.8-1.4,1c-0.6,0.2-1.2,0.4-1.8,0.4c-0.8,0-1.6-0.1-2.3-0.4
+               s-1.3-0.7-1.8-1.3C21.5,25.7,21.5,25.5,21.5,25.3z"/>
+         </g>
+         </svg>
+      </div>
+      <div class="amplitude-play-pause" id="play-pause">
+         <svg class="button-play" width="40px" height="40px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+             <!-- Generator: Sketch 41.2 (35397) - http://www.bohemiancoding.com/sketch -->
+             <title>Oval 1</title>
+             <desc>Created with Sketch.</desc>
+             <defs></defs>
+             <g id="05.100.00-OpenSource-Amplitude" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                 <g id="HD_05.100.00-521Website_OpenSource-Amplitude" transform="translate(-515.000000, -772.000000)">
+                     <g id="Lead-in">
+                         <g id="Player" transform="translate(368.000000, 359.000000)">
+                             <g id="Controllers/Status/Info" transform="translate(0.000000, 357.000000)">
+                                 <g id="Controls" transform="translate(114.000000, 56.000000)">
+                                     <g id="Play/Pause" transform="translate(33.000000, 0.000000)">
+                                         <g id="Oval-1">
+                                             <path class="cc2" d="M43.625,29.8025209 L23.646,17.4255209 C22.189,16.4735209 21,17.1725209 21,18.9875209 L21,43.0105209 C21,44.8225209 22.188,45.5285209 23.646,44.5725209 L43.625,32.1975209 C43.625,32.1975209 44.336,31.6975209 44.336,31.0005209 C44.336,30.3015209 43.625,29.8025209 43.625,29.8025209 L43.625,29.8025209 Z" id="Play" ></path>
+                                         </g>
+                                     </g>
+                                 </g>
+                             </g>
+                         </g>
+                     </g>
+                 </g>
+             </g>
+         </svg>
+         <svg class="button-pause" width="40px" height="40px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+             <!-- Generator: Sketch 41.2 (35397) - http://www.bohemiancoding.com/sketch -->
+             <title>Oval 1</title>
+             <desc>Created with Sketch.</desc>
+             <defs></defs>
+             <g id="05.100.00-OpenSource-Amplitude" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                 <g id="HD_05.100.00-521Website_OpenSource-Amplitude" transform="translate(-515.000000, -772.000000)">
+                     <g id="Lead-in">
+                         <g id="Player" transform="translate(368.000000, 359.000000)">
+                             <g id="Controllers/Status/Info" transform="translate(0.000000, 357.000000)">
+                                 <g id="Controls" transform="translate(114.000000, 56.000000)">
+                                     <g id="Play/Pause" transform="translate(33.000000, 0.000000)">
+                                         <g id="Oval-1">
+                                             <path class="cc2" d="M40.587,16.61 L36.257,16.61 C35.048,16.61 34.069,17.59 34.069,18.811 L34.069,42.403 C34.069,43.624 35.048,44.61 36.257,44.61 L40.587,44.61 C41.8,44.61 42.775,43.624 42.775,42.403 L42.775,18.811 C42.783,17.595 41.8,16.61 40.587,16.61 L40.587,16.61 Z" id="Shape" ></path>
+                                             <path d="M24.2,16.61 L19.872,16.61 C18.661,16.61 17.679,17.59 17.679,18.811 L17.679,42.403 C17.679,43.624 18.661,44.61 19.872,44.61 L24.2,44.61 C25.411,44.61 26.388,43.624 26.388,42.403 L26.388,18.811 C26.388,17.595 25.411,16.61 24.2,16.61 L24.2,16.61 Z" id="Shape" ></path>
+                                         </g>
+                                     </g>
+                                 </g>
+                             </g>
+                         </g>
+                     </g>
+                 </g>
+             </g>
+         </svg>
+      </div>
+      <div class="amplitude-forward" id="forward">
+         <svg version="1.1" id="Calque_1" width="25" height="25" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 35.7 40.7" style="enable-background:new 0 0 35.7 40.7;" xml:space="preserve">
+            <path class="cc2" d="M35.5,0.5C35.4,0.2,35,0,34.7,0c-0.7,0-1.1,0.5-1.1,1v3.8C29.9,1.7,25.3,0,20.4,0C14.9,0,9.8,2.1,6,6
+               c-3.9,3.9-6,9-6,14.4c0,5.4,2.1,10.5,6,14.4c3.9,3.9,9,6,14.4,6s10.5-2.1,14.4-6c0.4-0.4,0.4-1.2,0-1.6c-0.4-0.4-1.2-0.4-1.6,0
+               c-3.4,3.4-8,5.3-12.9,5.3s-9.5-1.9-12.9-5.3C3.9,29.7,2,25.1,2,20.2c0-4.9,1.9-9.5,5.3-12.9S15.4,2,20.2,2c4.4,0,8.6,1.6,12,4.5
+               h-4.5c-0.7,0-1,0.5-1,1c0,0.7,0.5,1.1,1,1.1h6.7c0.7,0,1-0.5,1-1.1V1.1C35.6,0.9,35.6,0.7,35.5,0.5z"/>
+            <g>
+               <path class="cc2" d="M13.9,14.5c0.2,0.2,0.3,0.5,0.3,0.8v10.9c0,0.3-0.1,0.6-0.4,0.8c-0.2,0.2-0.5,0.3-0.9,0.3S12.3,27.2,12,27
+                  c-0.2-0.2-0.3-0.5-0.3-0.8v-9l-1.2,0.7c-0.1,0.2-0.3,0.3-0.5,0.3c-0.3,0-0.6-0.1-0.8-0.4S8.8,17.3,8.8,17c0-0.2,0.1-0.4,0.2-0.6
+                  c0.1-0.2,0.2-0.3,0.4-0.4l2.9-1.7c0.2-0.1,0.5-0.2,0.8-0.2C13.4,14.2,13.6,14.3,13.9,14.5z"/>
+               <path class="cc2" d="M18.6,26.7c-0.8-0.6-1.3-1.4-1.7-2.4s-0.6-2.2-0.6-3.6s0.2-2.5,0.6-3.6c0.4-1,1-1.8,1.7-2.4s1.7-0.8,2.7-0.8
+                  s2,0.3,2.7,0.8c0.8,0.6,1.3,1.4,1.7,2.4c0.4,1,0.6,2.2,0.6,3.6s-0.2,2.5-0.6,3.6s-1,1.8-1.7,2.4c-0.8,0.6-1.7,0.9-2.7,0.9
+                  S19.4,27.3,18.6,26.7z M23.2,24.2c0.5-0.8,0.7-1.9,0.7-3.4s-0.2-2.6-0.7-3.4s-1.1-1.2-1.9-1.2s-1.4,0.4-1.9,1.2
+                  c-0.5,0.8-0.7,1.9-0.7,3.4s0.2,2.6,0.7,3.4s1.1,1.2,1.9,1.2C22.1,25.3,22.8,24.9,23.2,24.2z"/>
+               <path class="cc2" d="M27.6,25.3c0-0.3,0.2-0.6,0.5-0.8c0.2-0.1,0.4-0.2,0.5-0.2c0.3,0,0.5,0.1,0.8,0.4c0.4,0.4,0.8,0.7,1.2,0.9
+                  c0.4,0.2,0.9,0.3,1.5,0.3c1,0,1.5-0.4,1.5-1.1c0-0.4-0.2-0.6-0.5-0.8s-0.9-0.4-1.6-0.6c-0.7-0.2-1.3-0.4-1.8-0.6s-0.9-0.5-1.2-0.9
+                  c-0.3-0.4-0.5-1-0.5-1.7c0-0.6,0.2-1.1,0.5-1.6c0.3-0.4,0.8-0.8,1.4-1s1.2-0.4,1.8-0.4s1.3,0.1,1.9,0.4c0.6,0.2,1.1,0.6,1.5,1.1
+                  c0.2,0.2,0.2,0.4,0.2,0.7c0,0.3-0.1,0.5-0.4,0.7c-0.2,0.1-0.4,0.2-0.6,0.2c-0.3,0-0.5-0.1-0.7-0.3c-0.2-0.3-0.5-0.5-0.9-0.7
+                  s-0.8-0.2-1.2-0.2c-1,0-1.4,0.3-1.4,1c0,0.3,0.1,0.5,0.3,0.7s0.4,0.3,0.7,0.4c0.3,0.1,0.7,0.2,1.1,0.3c0.7,0.2,1.2,0.4,1.7,0.6
+                  s0.8,0.5,1.2,0.9c0.3,0.4,0.5,1,0.5,1.6s-0.2,1.2-0.5,1.6c-0.4,0.5-0.8,0.8-1.4,1c-0.6,0.2-1.2,0.4-1.8,0.4c-0.8,0-1.6-0.1-2.3-0.4
+                  s-1.3-0.7-1.8-1.3C27.6,25.7,27.6,25.5,27.6,25.3z"/>
+            </g>
+            </svg>
+
+      </div>
+
+
+      <div class="rwm-next" id="next">
+         <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 493.5 493.5" style="enable-background:new 0 0 493.5 493.5;" xml:space="preserve">
+         <g>
+            <g>
+               <path class="cc2" d="M46.4,493.3c10.1,0,20.9-4.1,32.1-11.9l274.1-188.8c17.6-12.2,27.3-28.5,27.3-46.1c0-17.6-9.8-33.9-27.4-46.1
+                  L78.1,11.7C66.8,4,55.6,0,45.5,0h0C34.8,0,26.6,4.4,20.2,13c-6.3,8.5-8.7,20.5-8.7,35v397C11.5,474.8,24.3,493.3,46.4,493.3z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="cc2" d="M440.4,493.5l13.2,0c14.9,0,28.3-12.1,28.3-27V27.1c0-14.9-13-27.1-27.9-27.1h-0.5l-12.9,0.1
+                  c-14.9,0-28.1,12.2-28.1,27v439.4C412.6,481.4,425.5,493.5,440.4,493.5z"/>
+            </g>
+         </g>
+         </svg>
+      </div>
+   </div>
+
+   <div class="meta-image amplitude-play-pause">
+      <img data-amplitude-song-info="cover_art_url"/>
+      <svg class="play" width="40px" height="40px" viewbox="0 0 60 60" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h60v60H0V0z" fill="none"/>
+            <g clip-path="url(#b)">
+               <path class="bc1" d="M43.625 29.803L23.646 17.425C22.189 16.474 21 17.173 21 18.988V43.01c0 1.811 1.188 2.517 2.646 1.561l19.979-12.374s.711-.5.711-1.197c0-.7-.711-1.198-.711-1.198z" fill="#F2F2F2" fill-rule="evenodd"/>
+            </g>
+      </svg>
+      <svg class="pause" width="40px" height="40px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <g id="05.100.00-OpenSource-Amplitude" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <g id="HD_05.100.00-521Website_OpenSource-Amplitude" transform="translate(-515.000000, -772.000000)">
+                  <g id="Lead-in">
+                      <g id="Player" transform="translate(368.000000, 359.000000)">
+                          <g id="Controllers/Status/Info" transform="translate(0.000000, 357.000000)">
+                              <g id="Controls" transform="translate(114.000000, 56.000000)">
+                                  <g id="Play/Pause" transform="translate(33.000000, 0.000000)">
+                                      <g id="Oval-1">
+                                          <path class="bc1" d="M40.587,16.61 L36.257,16.61 C35.048,16.61 34.069,17.59 34.069,18.811 L34.069,42.403 C34.069,43.624 35.048,44.61 36.257,44.61 L40.587,44.61 C41.8,44.61 42.775,43.624 42.775,42.403 L42.775,18.811 C42.783,17.595 41.8,16.61 40.587,16.61 L40.587,16.61 Z" id="Shape" ></path>
+                                          <path class="bc1" d="M24.2,16.61 L19.872,16.61 C18.661,16.61 17.679,17.59 17.679,18.811 L17.679,42.403 C17.679,43.624 18.661,44.61 19.872,44.61 L24.2,44.61 C25.411,44.61 26.388,43.624 26.388,42.403 L26.388,18.811 C26.388,17.595 25.411,16.61 24.2,16.61 L24.2,16.61 Z" id="Shape" ></path>
+                                      </g>
+                                  </g>
+                              </g>
+                          </g>
+                      </g>
+                  </g>
+              </g>
+          </g>
+      </svg>
+   </div>
+   <div class="meta-container">
+      <div class="meta-text">
+         <span class="serie-name cc4"></span><span data-amplitude-song-info="name" class="song-name cc4"></span>
+      </div>
+
+      <div class="time-container">
+         <span class="current-time">
+            <span class="amplitude-current-minutes" ></span>:<span class="amplitude-current-seconds"></span>
+         </span>
+         <div id="progress-container">
+            <input type="range" class="amplitude-song-slider"/>
+            <progress id="song-played-progress" class="amplitude-song-played-progress"></progress>
+         </div>
+         <span class="duration">
+            <span class="amplitude-duration-minutes"></span>:<span class="amplitude-duration-seconds"></span>
+         </span>
+      </div>
+   </div>
+   <div class="extras-container">
+      <div id="volume-container">
+         <div id="volume-controls">
+            <div class="amplitude-mute amplitude-not-muted">
+               <svg class="svg edisound_widget-container__not-muted" height="20px" width="20px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 61 48.4" xml:space="preserve">
+                  <g>
+                     <path class="cc3" d="M30.5,43.2c0,1.1-0.6,2-1.6,2.5c-0.4,0.2-0.8,0.3-1.2,0.3c-0.6,0-1.3-0.2-1.8-0.6L10.8,32.8H2.8
+                        C1.2,32.8,0,31.6,0,30V19c0-1.5,1.2-2.8,2.8-2.8h8.1L26,3.7c0.8-0.7,2-0.8,2.9-0.4c1,0.5,1.6,1.4,1.6,2.5L30.5,43.2L30.5,43.2z
+                         M41.1,38.9c-0.1,0-0.1,0-0.2,0c-0.7,0-1.4-0.3-2-0.8l-0.4-0.4c-1-1-1.1-2.5-0.3-3.6c2.1-2.8,3.2-6.1,3.2-9.6
+                        c0-3.7-1.2-7.2-3.6-10.1c-0.9-1.1-0.8-2.7,0.2-3.7l0.4-0.4c0.6-0.6,1.3-0.9,2.1-0.8c0.8,0,1.5,0.4,2,1c3.3,4,5,8.8,5,14
+                        c0,4.8-1.5,9.4-4.4,13.3C42.7,38.4,41.9,38.8,41.1,38.9z M52.6,47.5c-0.5,0.6-1.2,0.9-2,1c0,0-0.1,0-0.1,0c-0.7,0-1.4-0.3-2-0.8
+                        l-0.4-0.4c-1-1-1.1-2.6-0.2-3.7c4.5-5.3,6.9-12.1,6.9-19c0-7.2-2.6-14.2-7.4-19.6c-1-1.1-0.9-2.8,0.1-3.8L48,0.8
+                        C48.5,0.3,49.2,0,50,0c0.8,0,1.5,0.4,2,0.9c5.8,6.5,9,14.9,9,23.6C61,32.9,58,41.1,52.6,47.5z"/>
+                  </g>
+               </svg>
+               <svg class="svg edisound_widget-container__muted" height="20px" width="20px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 61 48.4" xml:space="preserve">
+                  <g>
+                     <path class="cc3" d="M30.5,43.2c0,1.1-0.6,2-1.6,2.5c-0.4,0.2-0.8,0.3-1.2,0.3c-0.6,0-1.3-0.2-1.8-0.6L10.8,32.8H2.8
+                        C1.2,32.8,0,31.6,0,30V19c0-1.5,1.2-2.8,2.8-2.8h8.1L26,3.7c0.8-0.7,2-0.8,2.9-0.4c1,0.5,1.6,1.4,1.6,2.5L30.5,43.2L30.5,43.2z M36.4,15.8L36.4,15.8l8.4,8.4l-8.4,8.4c-0.7,0.7-0.7,1.8,0,2.5l1.1,1.1c0.7,0.7,1.8,0.7,2.5,0l8.4-8.4
+                           l8.4,8.4c0.7,0.7,1.8,0.7,2.5,0l1.1-1.1c0.7-0.7,0.7-1.8,0-2.5L52,24.2l8.5-8.5c0.7-0.7,0.7-1.8,0-2.5l-1.1-1.1
+                           c-0.7-0.7-1.8-0.7-2.5,0l-8.5,8.5L40,12.2c-0.7-0.7-1.8-0.7-2.5,0l-1.1,1.1C35.7,13.9,35.7,15.1,36.4,15.8z"/>
+                  </g>
+               </svg>
+            </div>
+            <input type="range" class="amplitude-volume-slider">
+         </div>
+      </div>
+
+      <div class="extras-buttons button-playlist">
+         <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+         <g>
+            <g>
+               <path class="extras-button" d="M448,0H64C28.715,0,0,28.715,0,64v384c0,35.285,28.715,64,64,64h384c35.285,0,64-28.715,64-64V64
+                  C512,28.715,483.285,0,448,0z M469.333,448c0,11.776-9.579,21.333-21.333,21.333H64c-11.755,0-21.333-9.557-21.333-21.333V64
+                  c0-11.755,9.579-21.333,21.333-21.333h384c11.755,0,21.333,9.579,21.333,21.333V448z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M147.627,119.893c-1.067-2.773-2.56-4.907-4.48-7.04c-1.067-0.853-2.133-1.707-3.2-2.56c-1.28-0.853-2.56-1.493-3.84-1.92
+                  c-1.28-0.64-2.56-1.067-3.84-1.28c-4.267-0.853-8.533-0.427-12.373,1.28c-2.56,1.067-4.907,2.56-7.04,4.48
+                  c-1.92,2.133-3.413,4.267-4.48,7.04c-1.067,2.56-1.707,5.333-1.707,8.107s0.64,5.547,1.707,8.107
+                  c1.067,2.773,2.56,4.907,4.48,7.04c4.053,3.84,9.6,6.187,15.147,6.187c1.28,0,2.773-0.213,4.267-0.427
+                  c1.28-0.213,2.56-0.64,3.84-1.28c1.28-0.427,2.56-1.067,3.84-1.92c1.067-0.853,2.133-1.707,3.2-2.56
+                  c3.84-4.053,6.187-9.6,6.187-15.147C149.333,125.227,148.693,122.453,147.627,119.893z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M384,106.667H213.333C201.557,106.667,192,116.224,192,128s9.557,21.333,21.333,21.333H384
+                  c11.776,0,21.333-9.557,21.333-21.333S395.776,106.667,384,106.667z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M148.907,251.733c-0.213-1.28-0.64-2.56-1.28-3.84c-0.427-1.28-1.067-2.56-1.92-3.84c-0.853-1.067-1.707-2.133-2.56-3.2
+                  c-2.133-1.92-4.48-3.413-7.04-4.48c-5.12-2.133-11.093-2.133-16.213,0c-2.56,1.067-4.907,2.56-7.04,4.48
+                  c-0.853,1.067-1.707,2.133-2.56,3.2c-0.853,1.28-1.493,2.56-1.92,3.84c-0.64,1.28-1.067,2.56-1.28,3.84
+                  c-0.213,1.493-0.427,2.987-0.427,4.267c0,5.547,2.347,11.093,6.187,15.147c4.053,3.84,9.6,6.187,15.147,6.187
+                  s11.093-2.347,15.147-6.187c3.84-4.053,6.187-9.6,6.187-15.147C149.333,254.72,149.12,253.227,148.907,251.733z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M384,234.667H213.333C201.557,234.667,192,244.224,192,256s9.557,21.333,21.333,21.333H384
+                  c11.776,0,21.333-9.557,21.333-21.333S395.776,234.667,384,234.667z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M147.627,375.893c-1.067-2.773-2.56-4.907-4.48-7.04c-5.973-5.781-15.36-7.68-23.253-4.48
+                  c-2.56,1.067-4.907,2.56-7.04,4.48c-1.92,2.133-3.413,4.48-4.48,7.04s-1.707,5.333-1.707,8.107c0,5.76,2.133,11.093,6.187,15.147
+                  c4.053,4.032,9.387,6.187,15.147,6.187s11.093-2.155,15.147-6.187c4.053-4.053,6.187-9.387,6.187-15.147
+                  C149.333,381.227,148.907,378.453,147.627,375.893z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M384,362.667H213.333C201.557,362.667,192,372.203,192,384c0,11.797,9.557,21.333,21.333,21.333H384
+                  c11.776,0,21.333-9.536,21.333-21.333C405.333,372.203,395.776,362.667,384,362.667z"/>
+            </g>
+         </g>
+         </svg>
+         <div id="amplitude-playlist" class="amplitude-playlist extras-playlist cc5">
+         <span class="title-playlist cc4">Recommandations</span>
+                  </div>
+      </div>
+
+      <div class="extras-buttons amplitude-actions">
+         <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+         <g>
+            <g>
+               <g>
+                  <circle class="extras-button" cx="256" cy="256" r="64"/>
+                  <circle class="extras-button" cx="256" cy="448" r="64"/>
+                  <circle class="extras-button" cx="256" cy="64" r="64"/>
+               </g>
+            </g>
+         </g>
+         </svg>
+         <div class="extras-actions">
+            <div class="share rwmp-share">
+               <svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+               <path class="cc3" d="M405,341.3c-24.8,0-47.1,10.6-62.7,27.5l-154.3-88c2.4-7.9,3.7-16.2,3.7-24.8c0-8.6-1.3-17-3.7-24.9l154.3-88
+                  c15.6,16.9,37.9,27.5,62.7,27.5c47.1,0,85.3-38.3,85.3-85.3C490.3,38.3,452.1,0,405,0s-85.3,38.3-85.3,85.3c0,7,0.9,13.7,2.4,20.2
+                  l-156.4,89.2c-15.4-14.9-36.3-24.1-59.3-24.1C59.3,170.7,21,208.9,21,256s38.3,85.3,85.3,85.3c23,0,44-9.2,59.3-24.1l156.4,89.2
+                  c-1.6,6.5-2.4,13.3-2.4,20.2c0,47.1,38.3,85.3,85.3,85.3s85.3-38.3,85.3-85.3C490.3,379.6,452.1,341.3,405,341.3z"/>
+               </svg>
+               Partager
+            </div>
+            <div class="download">
+               <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+               <g>
+                  <g>
+                     <path class="cc3" d="M382.6,233.4c-2.6-5.7-8.3-9.4-14.6-9.4h-64V16c0-8.8-7.2-16-16-16h-64c-8.8,0-16,7.2-16,16v208h-64
+                        c-6.3,0-12,3.7-14.6,9.4c-2.6,5.7-1.6,12.4,2.5,17.2l112,128c3,3.5,7.4,5.5,12,5.5s9-2,12-5.5l112-128
+                        C384.2,245.8,385.2,239.1,382.6,233.4z"/>
+                  </g>
+               </g>
+               <g>
+                  <g>
+                     <path class="cc3" d="M432,374.3v51.3c0,12.3-10,22.3-22.3,22.3H102.3C90,448,80,438,80,425.7v-51.3C80,362,70,352,57.7,352H38.3
+                        C26,352,16,362,16,374.3V480c0,17.7,14.3,32,32,32h393.7c30,0,54.3-24.3,54.3-54.3v-83.3c0-12.3-10-22.3-22.3-22.3h-19.3
+                        C442,352,432,362,432,374.3z"/>
+                  </g>
+               </g>
+               </svg>
+               Télécharger
+            </div>
+                     </div>
+      </div>
+      <div class="extras-buttons amplitude-expand">
+         <svg class="button-reduce" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 25.941 25.941" style="enable-background:new 0 0 25.941 25.941;" xml:space="preserve">
+         <g>
+            <path class="extras-button" d="M10.632,11.049l-6.527-0.617c0,0-0.869,0.023-0.385-0.461c0.488-0.486,1.664-1.664,1.664-1.664S5.097,8.021,4.66,7.58
+               C3.404,6.324,1.119,4.039,0.189,3.109c0,0-0.322-0.188,0.064-0.57C0.638,2.15,2.32,0.467,2.595,0.195
+               C2.866-0.08,3.074,0.142,3.074,0.142c0.904,0.9,3.27,3.264,4.482,4.479c0.395,0.394,0.652,0.652,0.652,0.652
+               s0.943-0.945,1.539-1.539c0.592-0.592,0.588,0.301,0.588,0.301s0.826,5.848,0.826,6.547C11.162,11.092,10.632,11.049,10.632,11.049
+               z"/>
+            <path class="extras-button" d="M15.371,14.904l6.525,0.617c0,0,0.871-0.025,0.387,0.459c-0.486,0.486-1.666,1.67-1.666,1.67s0.285,0.281,0.727,0.723
+               c1.258,1.256,3.541,3.541,4.473,4.475c0,0,0.318,0.182-0.064,0.564c-0.385,0.387-2.07,2.074-2.348,2.348
+               c-0.27,0.271-0.475,0.055-0.475,0.055c-0.904-0.906-3.27-3.268-4.484-4.482c-0.393-0.393-0.646-0.648-0.646-0.648
+               s-0.945,0.941-1.543,1.535c-0.592,0.594-0.592-0.299-0.592-0.299s-0.82-5.852-0.82-6.547
+               C14.843,14.863,15.371,14.904,15.371,14.904z"/>
+            <path class="extras-button" d="M10.994,15.338l-0.615,6.529c0,0,0.025,0.873-0.461,0.385c-0.488-0.49-1.668-1.666-1.668-1.666s-0.287,0.287-0.721,0.727
+               c-1.258,1.258-3.547,3.541-4.477,4.475c0,0-0.186,0.314-0.57-0.068s-2.066-2.072-2.344-2.34c-0.275-0.273-0.055-0.482-0.055-0.482
+               c0.904-0.9,3.266-3.268,4.482-4.482c0.395-0.393,0.652-0.65,0.652-0.65s-0.943-0.945-1.539-1.535
+               c-0.596-0.596,0.297-0.592,0.297-0.592s5.852-0.822,6.553-0.822C11.037,14.814,10.994,15.338,10.994,15.338z"/>
+            <path class="extras-button" d="M14.849,10.601l0.615-6.531c0,0-0.023-0.867,0.461-0.383c0.488,0.488,1.666,1.668,1.666,1.668s0.287-0.287,0.729-0.727
+               c1.256-1.258,3.539-3.541,4.471-4.471c0,0,0.186-0.32,0.57,0.066c0.385,0.381,2.068,2.066,2.342,2.338
+               c0.277,0.275,0.057,0.482,0.057,0.482c-0.902,0.904-3.268,3.268-4.48,4.482c-0.396,0.391-0.656,0.648-0.656,0.648
+               s0.947,0.943,1.541,1.537c0.592,0.598-0.297,0.592-0.297,0.592s-5.852,0.824-6.553,0.824
+               C14.808,11.129,14.849,10.601,14.849,10.601z"/>
+         </g>
+         </svg>
+         <svg class="button-expand" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+         <g>
+            <g>
+               <path class="extras-button" d="M236.454,172.808L132.421,68.789l43.184-43.184C185.014,16.197,178.365,0,165,0H15C6.709,0,0,6.709,0,15v150
+                  c0,13.241,16.066,20.112,25.606,10.606l43.198-43.169l104.004,104.018c5.856,5.856,15.351,5.859,21.209,0.001l42.437-42.437
+                  C242.286,188.187,242.334,178.688,236.454,172.808z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M497,0H347c-13.361,0-20.018,16.193-10.606,25.605l43.184,43.184L275.544,172.792c-5.844,5.844-5.868,15.358,0,21.226
+                  l42.437,42.437c5.86,5.86,15.352,5.859,21.211,0l104.019-104.034l43.184,43.184C495.93,185.141,512,178.23,512,165V15
+                  C512,6.709,505.291,0,497,0z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M486.396,336.393l-43.184,43.184L339.193,275.544c-5.856-5.856-15.349-5.862-21.211,0l-42.437,42.437
+                  c-5.868,5.868-5.844,15.382,0,21.226l104.034,104.004l-43.184,43.184C326.986,495.803,333.635,512,347,512h150
+                  c8.291,0,15-6.709,15-15V347C512,333.639,495.807,326.982,486.396,336.393z"/>
+            </g>
+         </g>
+         <g>
+            <g>
+               <path class="extras-button" d="M236.456,317.983l-42.437-42.437c-5.625-5.625-15.586-5.625-21.211,0L68.789,379.579l-43.184-43.184
+                  C16.283,327.04,0,333.563,0,347v150c0,8.291,6.709,15,15,15h150c13.361,0,20.018-16.193,10.606-25.605l-43.184-43.184
+                  l104.034-104.017C242.336,333.314,242.289,323.816,236.456,317.983z"/>
+            </g>
+         </g>
+         </svg>
+      </div>
+   </div>
+      <!--
+      <div class="amplitude-share" id="share"></div>
+      <div class="amplitude-download" id="download"></div>
+      <div class="amplitude-add" id="add"></div>
+      -->
+</div>
+<!--/div-->
+
+
+ <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N48L8TN" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+`;
+    }
+
+    /* pr bug css*/
+    var rwmp_ua = window.navigator.userAgent;
+    //var rwmp_iOS = !!rwmp_ua.match(/iPad/i) || !!rwmp_ua.match(/iPhone/i) || !!rwmp_ua.match(/Mac OS/i);
+    var rwmp_iOS = !!rwmp_ua.match(/iPad/i) || !!rwmp_ua.match(/iPhone/i);
+    var rwmp_webkit = !!rwmp_ua.match(/WebKit/i);
+    var rwmp_safari = !!rwmp_ua.match(/Safari/i);
+    var rwmp_CriOS = !!rwmp_ua.match(/CriOS/i);
+    var rwmp_iOSSafari = rwmp_iOS && rwmp_webkit && rwmp_safari && !rwmp_CriOS;
+    if(rwmpContainerEl){
+        if(rwmp_iOS){ rwmpContainerEl.classList.add('ios'); }
+        if(rwmp_webkit){ rwmpContainerEl.classList.add('webkit'); }
+        if(rwmp_safari){ rwmpContainerEl.classList.add('safari'); }
+    }
+
+        fetch('https\u003A\/\/publishers.edisound.com\/api\/p\/medias\/fetch', {
+        method: "POST",
+        body: JSON.stringify({uuid: '1eb7520c\u002D70bd\u002D6372\u002D8bb0\u002D95ad3fef3cf3', user_id: getCookie('_edisound_player'), gdpr_consent: consentString}),
+        headers: new Headers({"Content-Type": "application/json"})
+    })
+    .then(res => res.json())
+    .then((data) => {
+        if (data.hasOwnProperty('user_id') && data.user_id != null && getCookie('_edisound_player') == null) {
+            setCookie('_edisound_player', data.user_id, 365);
+        }
+        else if (getCookie('_edisound_player')) {
+            setCookie('_edisound_player', getCookie('_edisound_player'), 365);
+        }
+        // VAST Global
+        if (data.hasOwnProperty('preroll') && data.preroll === 1 && data.hasOwnProperty('preroll_url')) {
+            rwmpVars.globalVast = data.preroll_url;
+        }
+        if (data.hasOwnProperty('yknytmzg') && data.yknytmzg === 1) {
+            rwmpVars.yknytmzg = true;
+        }
+        if(!(Object.keys(data).length !== 0  && data.hasOwnProperty('medias')  && Object.keys(data.medias).length !== 0)) {
+            console.log('Missing sponsorized songs');
+            data = {"medias":[]};
+        }
+        rwmpLoadPlayer(data.medias);
+    })
+    .catch(
+        (err) => {
+            console.log('Fetch https\u003A\/\/publishers.edisound.com\/api\/p\/medias\/fetch error : ', err);
+            console.log('An error occured. Your podcast will be displayed anyway');
+            rwmpLoadPlayer([]);
+        }
+    );
+    
+// End: isolation du code
+})(this, this.rwmpVars);
+
+function setCookie(name,value,days) {
+    var expires = "";
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; path=/;SameSite=None;Secure;domain=."+getDomainName(window.location.hostname);
+}
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)===' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+function eraseCookie(name) {
+    document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+}
+
+function getDomainName(hostName)
+{
+    return hostName.substring(hostName.lastIndexOf(".", hostName.lastIndexOf(".") - 1) + 1);
+}
+
+function updatenotification() {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: Amplitude.getActiveSongMetadata().name,
+            artist: Amplitude.getActiveSongMetadata().artist,
+            artwork: [
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '96x96', type: 'image/jpeg' },
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '128x128', type: 'image/jpeg' },
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '192x192', type: 'image/jpeg' },
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '256x256', type: 'image/jpeg' },
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '384x384', type: 'image/jpeg' },
+                { src: Amplitude.getActiveSongMetadata().cover_art_url, sizes: '512x512', type: 'image/jpeg' },
+            ] });
+
+        navigator.mediaSession.setActionHandler('play', function () { Amplitude.play() });
+        navigator.mediaSession.setActionHandler('pause', function () { Amplitude.pause() });
+        navigator.mediaSession.setActionHandler('previoustrack', function () { Amplitude.prev(playlistKey = null) });
+        navigator.mediaSession.setActionHandler('nexttrack', function () { Amplitude.next(playlistKey = null) });
+    }
+}
+&Qh�       a�Sa�SC�a�          O^partitionKey=%28https%2Cjournaldunet.fr%29,:https://publishers.edisound.com/player/javascript/podcast-1eb7520c-70bd-6372-8bb0-95ad3fef3cf3.js?placementid=c504791f-6073-4f08-8b5e-9c0f325c27f0&gid=1eb54159-e1aa-6a0a-8fe9-bb8d1c0110e1&view=small&random=iaPuphJLlL necko:classified 1 strongly-framed 1 security-info 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 request-method GET response-head HTTP/2 200 OK
+content-type: text/javascript; charset=UTF-8
+server: nginx/1.18.0
+cache-control: no-cache, private
+date: Wed, 15 Dec 2021 20:42:06 GMT
+x-cache: Miss from cloudfront
+via: 1.1 9568a708c8ab21597698ebe7dce6c42e.cloudfront.net (CloudFront)
+x-amz-cf-pop: FRA2-C1
+x-amz-cf-id: nDiZjsLmGMtWnklJ8hDGPP9NFKvtO96blr3yfk35-kQN-PMNBjYK9g==
+X-Firefox-Spdy: h2
+ original-response-headers content-type: text/javascript; charset=UTF-8
+server: nginx/1.18.0
+cache-control: no-cache, private
+date: Wed, 15 Dec 2021 20:42:06 GMT
+x-cache: Miss from cloudfront
+via: 1.1 9568a708c8ab21597698ebe7dce6c42e.cloudfront.net (CloudFront)
+x-amz-cf-pop: FRA2-C1
+x-amz-cf-id: nDiZjsLmGMtWnklJ8hDGPP9NFKvtO96blr3yfk35-kQN-PMNBjYK9g==
+X-Firefox-Spdy: h2
+ ctid 2 uncompressed-len 0 net-response-time-onstart 584 net-response-time-onstop 1378  �

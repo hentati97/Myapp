@@ -1,0 +1,690 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<title>Ubuntu 18.04 LTS : Docker : Install : Server World</title>
+<link href="./css/base.css?20210713" media="screen" rel="stylesheet" type="text/css" />
+<link href="./css/navi.css?20201121" media="screen" rel="stylesheet" type="text/css" />
+<link href="./css/main.css?20210625" media="screen" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="./command/popup.js"></script>
+<script type="text/javascript">
+hs.graphicsDir = './command/graphics/';
+hs.outlineType = 'rounded-white';
+hs.wrapperClassName = 'draggable-header';
+</script>
+</head>
+<body>
+<div id="top-menu">
+<table id="menu-table" summary="menu">
+<tr>
+<td class="menu" style="width: 15%;"><a href="./">Server World</a></td>
+<td class="menu">
+<div class="top_navi">
+<ul>
+<li><a href="./note?p=oslist">Other OS Configs</a>
+<ul>
+<li><a href="./note?os=CentOS_Stream_8&amp;p=download">CentOS Stream 8</a></li>
+<li><a href="./note?os=CentOS_7&amp;p=download">CentOS 7</a></li>
+<li><a href="./note?os=Fedora_35&amp;p=download">Fedora 35</a></li>
+<li><a href="./note?os=Fedora_34&amp;p=download">Fedora 34</a></li>
+<li><a href="./note?os=Debian_11&amp;p=download">Debian 11</a></li>
+<li><a href="./note?os=Debian_10&amp;p=download">Debian 10</a></li>
+<li><a href="./note?os=Rocky_Linux_8&amp;p=download">Rocky Linux 8</a></li>
+<li><a href="./note?os=Ubuntu_21.04&amp;p=download">Ubuntu 21.04</a></li>
+<li><a href="./note?os=Ubuntu_20.04&amp;p=download">Ubuntu 20.04 LTS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=download">Ubuntu 18.04 LTS</a></li>
+<li><a href="./note?os=Windows_Server_2022&amp;p=download">Windows Server 2022</a></li>
+<li><a href="./note?os=Windows_Server_2019&amp;p=download">Windows Server 2019</a></li>
+<li><a href="./note?os=Windows_Server_2016&amp;p=download">Windows Server 2016</a></li>
+<li><a href="./note?os=Other">Other Tips</a></li>
+<li><a href="./note?p=command" style="border-bottom: #aaaaaa 0px solid;">Commands Help</a></li>
+</ul>
+<ul style="position: absolute; margin-left: 18em; z-index: 90;">
+<li><a href="./note?os=CentOS_8&amp;p=download">CentOS 8</a></li>
+<li><a href="./note?os=CentOS_6&amp;p=download">CentOS 6</a></li>
+<li><a href="./note?os=Ubuntu_19.04&amp;p=download">Ubuntu 19.04</a></li>
+<li><a href="./note?os=Ubuntu_17.04&amp;p=download">Ubuntu 17.04</a></li>
+<li><a href="./note?os=Ubuntu_16.04&amp;p=download">Ubuntu 16.04 LTS</a></li>
+<li><a href="./note?os=Ubuntu_15.04&amp;p=download">Ubuntu 15.04</a></li>
+<li><a href="./note?os=Ubuntu_14.04&amp;p=download">Ubuntu 14.04 LTS</a></li>
+<li><a href="./note?os=Ubuntu_13.04&amp;p=download">Ubuntu 13.04</a></li>
+<li><a href="./note?os=Ubuntu_12.04&amp;p=download">Ubuntu 12.04 LTS</a></li>
+<li><a href="./note?os=Ubuntu_11.04&amp;p=download">Ubuntu 11.04</a></li>
+<li><a href="./note?os=Ubuntu_10.04&amp;p=make_media">Ubuntu 10.04 LTS</a></li>
+<li><a href="./note?os=Windows_Server_2012&amp;p=download">Windows 2012 R2</a></li>
+<li><a href="./note?os=SUSE_Linux_Enterprise_15&amp;p=download">SUSE Enterprise 15</a></li>
+<li><a href="./note?os=SUSE_Linux_Enterprise_12&amp;p=download">SUSE Enterprise 12</a></li>
+<li><a href="./note?os=SUSE_Linux_Enterprise_Server_11&amp;p=make_media" style="border-bottom: #aaaaaa 0px solid;">SUSE Enterprise 11</a></li>
+</ul>
+<ul style="position: absolute; margin-left: 31em; z-index: 95; width: 120px;">
+<li><a href="./note?os=Debian_9&amp;p=download">Debian 9</a></li>
+<li><a href="./note?os=Debian_8&amp;p=download">Debian 8</a></li>
+<li><a href="./note?os=Debian_7.0&amp;p=download">Debian 7</a></li>
+<li><a href="./note?os=Debian_6.0&amp;p=download">Debian 6</a></li>
+<li><a href="./note?os=CentOS_5&amp;p=make_media">CentOS 5</a></li>
+<li><a href="./note?os=Fedora_33&amp;p=download">Fedora 33</a></li>
+<li><a href="./note?os=Fedora_32&amp;p=download">Fedora 32</a></li>
+<li><a href="./note?os=Fedora_31&amp;p=download">Fedora 31</a></li>
+<li><a href="./note?os=Fedora_30&amp;p=download">Fedora 30</a></li>
+<li><a href="./note?os=Fedora_29&amp;p=download">Fedora 29</a></li>
+<li><a href="./note?os=Fedora_31&amp;p=download">Fedora 31</a></li>
+<li><a href="./note?os=Fedora_30&amp;p=download">Fedora 30</a></li>
+<li><a href="./note?os=Fedora_29&amp;p=download">Fedora 29</a></li>
+<li><a href="./note?os=Fedora_28&amp;p=download">Fedora 28</a></li>
+<li><a href="./note?os=Fedora_27&amp;p=download">Fedora 27</a></li>
+<li><a href="./note?os=Fedora_26&amp;p=download" style="border-bottom: #aaaaaa 0px solid;">Fedora 26</a></li>
+</ul>
+<ul style="position: absolute; margin-left: 40em; z-index: 99; width: 120px;">
+<li><a href="./note?os=Fedora_25&amp;p=download">Fedora 25</a></li>
+<li><a href="./note?os=Fedora_24&amp;p=download">Fedora 24</a></li>
+<li><a href="./note?os=Fedora_23&amp;p=download">Fedora 23</a></li>
+<li><a href="./note?os=Fedora_22&amp;p=download">Fedora 22</a></li>
+<li><a href="./note?os=Fedora_21&amp;p=download">Fedora 21</a></li>
+<li><a href="./note?os=Fedora_20&amp;p=download">Fedora 20</a></li>
+<li><a href="./note?os=Fedora_19&amp;p=download">Fedora 19</a></li>
+<li><a href="./note?os=Fedora_18&amp;p=download">Fedora 18</a></li>
+<li><a href="./note?os=Fedora_17&amp;p=download">Fedora 17</a></li>
+<li><a href="./note?os=Fedora_16&amp;p=download">Fedora 16</a></li>
+<li><a href="./note?os=Fedora_15&amp;p=download">Fedora 15</a></li>
+<li><a href="./note?os=Fedora_14&amp;p=download">Fedora 14</a></li>
+<li><a href="./note?os=Fedora_13&amp;p=make_media">Fedora 13</a></li>
+<li><a href="./note?os=Fedora_12&amp;p=make_media">Fedora 12</a></li>
+<li><a href="./note?os=Fedora_11&amp;p=make_media">Fedora 11</a></li>
+<li><a href="./note?os=Fedora_10&amp;p=make_media">Fedora 10</a></li>
+<li><a href="./note?os=Scientific_Linux_6&amp;p=download" style="border-bottom: #aaaaaa 0px solid;">Scientific 6</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</td>
+<td class="menu"><a href="./note?p=policy">Privacy Policy</a></td>
+<td class="menu"><a href="./note?p=send">Links/Contact</a></td>
+<td class="menu" style="width: 15%;">
+<div class="count">5071 / 93812563</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="left">
+<div class="os">Ubuntu 18.04</div>
+<div class="navi">
+<ul>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=download&amp;f=1">Install Ubuntu</a>
+<ul style="position: absolute; margin-top: -1.85em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=download">&nbsp; Install</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=download">(01) Get Ubuntu 18.04</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=install">(02) Install Ubuntu</a></li>
+<li style="background: #e6e6fa; border-top: #696969 1px solid; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=1">&nbsp; Initial Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=1">(01) Add a user</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=2">(02) Enable root user</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=3">(03) Network Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=4">(04) Configure Services</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=5">(05) Update System</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=6">(06) Configure vim</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=initial_conf&amp;f=7">(07) Configure sudo</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=1">NTP / SSH Server</a>
+<ul style="position: absolute; margin-top: -1.9em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ntp&amp;f=1">&nbsp; NTP Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ntp&amp;f=1">(01) Configure NTP Server(NTPd)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ntp&amp;f=2">(02) Configure NTP Server(Chrony)</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ntp&amp;f=3">(03) Configure NTP Client</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=1">&nbsp; SSH Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=1">(01) Password Authentication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=2">(02) SSH File Transfer(Ubuntu)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=3">(03) SSH File Transfer(Windows)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=4">(04) SSH Key-Pair Authentication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=5">(05) SFTP only + Chroot</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=6">(06) Use SSHPass</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=7">(07) Use SSH-Agent</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=ssh&amp;f=8">(08) Use Parallel SSH</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=1">DNS / DHCP Server</a>
+<ul style="position: absolute; margin-top: -3.7em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=dnsmasq&amp;f=1">&nbsp; DNS/DHCP Server (Dnsmasq)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dnsmasq&amp;f=1">(01) Install Dnsmasq</a></li>
+<li style="border-bottom: #696969 1px solid"><a href="./note?os=Ubuntu_18.04&amp;p=dnsmasq&amp;f=2">(02) Configure DHCP Server</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=1">&nbsp; DNS Server (BIND)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=1">(01) Install Bind</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=2">(02) Set Zone Info</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=3">(03) Start BIND</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=4">(04) Set CNAME record</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=dns&amp;f=5">(05) Slave DNS Server</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=dhcp&amp;f=1">&nbsp; DHCP Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=dhcp&amp;f=1">(01) Configure DHCP Server</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=dhcp&amp;f=2">(02) Configure DHCP Client</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=nfs&amp;f=1">Storage Server</a>
+<ul style="position: absolute; margin-top: -5.55em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=nfs&amp;f=1">&nbsp; NFS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nfs&amp;f=1">(01) Configure NFS Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nfs&amp;f=2">(02) Configure NFS Client</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=nfs&amp;f=3">(03) NFS 4 ACL Tool</a></li>
+<li style="background: #e6e6fa; border-top: #696969 1px solid; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=iscsi&amp;f=1">&nbsp; iSCSI</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=iscsi&amp;f=1">(01) Conf iSCSI Taregt(targetcli)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=iscsi&amp;f=2">(02) Configure iSCSI Taregt(tgt)</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=iscsi&amp;f=3">(03) Configure iSCSI Initiator</a></li>
+<li style="background: #e6e6fa; border-top: #696969 1px solid;border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=1">&nbsp; GlusterFS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=1">(01) Install GlusterFS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=2">(02) Distributed Setting</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=4">(03) Replication Setting</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=5">(04) Striping Setting</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=6">(05) Distributed + Replication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=7">(06) Striping + Replication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=3">(07) GlusterFS Clients</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=glusterfs&amp;f=8">(08) GlusterFS + NFS-Ganesha</a></li>
+<li style="background: #e6e6fa; border-top: #696969 1px solid;border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ceph&amp;f=1">&nbsp; Ceph</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ceph&amp;f=1">(01) Configure Ceph Cluster</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ceph&amp;f=2">(02) Use as Block Device</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=ceph&amp;f=3">(03) Use as File System</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=1">Virtualize / Container</a>
+<ul style="position: absolute; margin-top: -7.4em; border-right: #696969 1px dashed; z-index:70;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=1">&nbsp; KVM</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=1">(01) Install KVM</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=2">(02) Create Virtual Machine#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=3">(03) Create Virtual Machine#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=4">(04) Basic Operations</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=5">(05) Management tools</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=6">(06) SPICE Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=7">(07) SPICE Client</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=8">(08) Nested KVM</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=9">(09) Live Migration</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=10">(10) Storage Migration</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=kvm&amp;f=11">(11) GPU Passthrough</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=virtualbox&amp;f=1">&nbsp; VirtualBox</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=virtualbox&amp;f=1">(01) Install VirtualBox</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=virtualbox&amp;f=2">(02) Create a Virtual Machine#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=virtualbox&amp;f=3">(03) Install GuestAdditions</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=virtualbox&amp;f=4">(04) Create a Virtual Machine#2</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=vagrant&amp;f=1">&nbsp; Vagrant</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=vagrant&amp;f=1">(01) Install Vagrant</a></li>
+</ul>
+<ul style="position: absolute; margin-top: -7.4em; margin-left: 22.8em; z-index:60;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=1">&nbsp; Docker</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=1">(01) Install Docker</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=2">(02) Add Container images</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=3">(03) Access to Container Services</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=4">(04) Use Dockerfile</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=5">(05) Use Persistent Storage</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=6">(06) Use Docker-Registry</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=9">(07) Use Docker-Registry (Auth)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=7">(08) Use Docker Compose</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=8">(09) Configure Docker Swarm</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=1">&nbsp; Kubernetes</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=1">(01) Minikube : Install</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=2">(02) Minikube : Deploy Pods</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=3">(03) Kubeadm : Install</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=4">(04) Kubeadm : Conf Master Node</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=5">(05) Kubeadm : Conf Worker Node</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=6">(06) Use Persistent Storage</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=kubernetes&amp;f=7">(07) Use Private Registry</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=1">Cloud Compute</a>
+<ul style="position: absolute; margin-top: -9.2em; z-index:60;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=1">&nbsp; OpenStack Stein</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=1">(01) Stein Overview</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=2">(02) Pre-Requirements</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=3">(03) Configure Keystone#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=4">(04) Configure Keystone#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=5">(05) Configure Glance</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=6">(06) Add VM images to Glance</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=7">(07) Configure Nova#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=8">(08) Configure Nova#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=9">(09) Configure Nova#3</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=10">(10) Configure Neutron#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=11">(11) Configure Neutron#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=12">(12) Configure Networking</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=13">(13) Add New Users</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=14">(14) Run Instances</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein&amp;f=15">(15) Configure Horizon</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=1">(16) Add Compute Nodes</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=2">(17) Configure Neutron#3</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=3">(18) Configure Neutron#4</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=4">(19) Configure Neutron#5</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=5">(20) Neutron Network (FLAT)</a></li>
+</ul>
+<ul style="position: absolute; margin-top: -9.2em; margin-left: 22.8em; border-left: #696969 1px dashed; z-index:70;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid; width: 250px; line-height: 19px;">&nbsp;</li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=6">(21) Neutron Network (VXLAN)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=7">(22) Neutron LBaaS V2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=8">(23) Configure Cinder#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=9">(24) Configure Cinder#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=10">(25) Cinder Storage (LVM)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=11">(26) Cinder Storage (NFS)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=12">(27) Cinder Storage (Multi-Back)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=13">(28) Cinder Backup Service</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=14">(29) Configure Swift#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein2&amp;f=15">(30) Configure Swift#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=1">(31) Configure Swift#3</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=2">(32) How to use Swift</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=3">(33) Configure Manila#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=4">(34) Configure Manila#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=5">(35) How to use Manila#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=6">(36) How to use Manila#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=7">(37) Configure Heat#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=8">(38) Configure Heat#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=9">(39) How to use Heat</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=10">(40) Configure Designate#1</a></li>
+</ul>
+<ul style="position: absolute; margin-top: -9.2em; margin-left: 45.6em; border-left: #696969 1px dashed; z-index:70;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid; width: 250px; line-height: 19px;">&nbsp;</li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=11">(41) Configure Designate#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=12">(42) How to use Designate</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=13">(43) Configure Barbican</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=14">(44) How to use Barbican</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein3&amp;f=15">(45) Install Rally</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=1">(46) Configure Gnocchi</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=2">(47) Configure Ceilometer#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=3">(48) Configure Ceilometer#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=4">(49) How to use Ceilometer (Nova)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=5">(50) How to use Ceilometer (Glance)</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_stein4&amp;f=6">(51) How to use Ceilometer (Cinder)</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_rocky&amp;f=1">&nbsp; OpenStack Rocky</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openstack_queens&amp;f=1">&nbsp; OpenStack Queens</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=1">Directory Server</a>
+<ul style="position: absolute; margin-top: -11.0em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=1">&nbsp; FreeIPA</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=1">(01) Configure FreeIPA Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=2">(02) Add User Accounts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=3">(03) Configure FreeIPA Client</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=4">(04) Basic Operation</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=freeipa&amp;f=5">(05) Web Admin Console</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=1">&nbsp; OpenLDAP</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=1">(01) Configure LDAP Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=2">(02) Add User Accounts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=3">(03) Configure LDAP Client</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=4">(04) LDAP over SSL/TLS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=5">(05) LDAP Replication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=6">(06) Multi-Master Replication</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=openldap&amp;f=7">(07) Install LDAP Account Manager</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=nis&amp;f=1">&nbsp; NIS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nis&amp;f=1">(01) Configure NIS Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nis&amp;f=2">(02) Configure NIS Client</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=nis&amp;f=3">(03) Configure NIS Slave</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=1">WEB Server</a>
+<ul style="position: absolute; margin-top: -12.8em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=1">&nbsp; Apache2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=1">(01) Install Apache2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=2">(02) Use Perl Scripts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=3">(03) Use PHP Scripts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=4">(04) Use Ruby Scripts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=5">(05) Use Python Scripts</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=6">(06) Enable Userdir</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=7">(07) Virtual Hostings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=8">(08) SSL/TLS Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=9">(09) Basic Authentication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=10">(10) Basic Auth + PAM</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=11">(11) Kerberos Authentication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=12">(12) WebDAV Settings</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=httpd&amp;f=13">(13) PHP + PHP-FPM</a></li>
+</ul>
+<ul style="position: absolute; margin-top: -12.8em; margin-left: 22.8em; border-left: #696969 1px dashed; z-index:70;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=1">&nbsp; Nginx</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=1">(01) Install Nginx</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=2">(02) Configure Virtual Hostings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=3">(03) Use UserDir</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=4">(04) Configure SSL/TLS Setting</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=5">(05) Configure CGI executable Env</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=nginx&amp;f=6">(06) Configure Basic Authentication</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=1">Database</a>
+<ul style="position: absolute; margin-top: -5.55em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=1">&nbsp; MariaDB</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=1">(01) Install MariaDB</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=2">(02) Install phpMyAdmin</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=3">(03) MariaDB over SSL/TLS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=4">(04) MariaDB Replication</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=mariadb&amp;f=5">(05) MariaDB Galera Cluster</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=postgresql&amp;f=1">&nbsp; PostgreSQL</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=postgresql&amp;f=1">(01) Install PostgreSQL</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=postgresql&amp;f=2">(02) Install phpPgAdmin</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=postgresql&amp;f=3">(03) PostgreSQL over SSL/TLS</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=1">FTP / MAIL Server</a>
+<ul style="position: absolute; margin-top: -16.5em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=1">&nbsp; FTP Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=1">(01) Install Vsftpd</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=2">(02) Install ProFTPD</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=3">(03) Install Pure-FTPd</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=4">(04) FTP Client (Ubuntu)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=5">(05) FTP Client (Windows)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=6">(06) Vsftpd over SSL/TLS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=7">(07) ProFTPD over SSL/TLS</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=ftp&amp;f=8">(08) Pure-FTPd over SSL/TLS</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=1">&nbsp; MAIL Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=1">(01) Install Postfix</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=2">(02) Install Dovecot</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=3">(03) Add Mail Accounts#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=4">(04) Mail Client's Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=5">(05) Add Mail Accounts#2</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=6">(06) SSL/TLS Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=7">(07) Virtual Domain</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=8">(08) Postfix + Clamav + Amavisd</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=9">(09) Log Analyze : pflogsumm</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=mail&amp;f=10">(10) Log Analyze : MailGraph</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=1">Samba Server</a>
+<ul style="position: absolute; margin-top: -5.55em;">
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=1">(01) Fully accessed share directory</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=2">(02) Restricted share directory</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=3">(03) Samba Winbind</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=4">(04) Samba AD DC : Configure DC</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=5">(05) Samba AD DC : User Manage</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=6">(06) Samba AD DC : Join Domain</a></li>
+<li style="border-bottom: 0px"><a href="./note?os=Ubuntu_18.04&amp;p=samba&amp;f=7">(07) Samba AD DC : Add Existing AD</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=1">Proxy/Load Balancer</a>
+<ul style="position: absolute; margin-top: -16.5em;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=1">&nbsp; Squid</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=1">(01) Install Squid</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=2">(02) Configure Proxy Clients</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=3">(03) Set Basic Authentication</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=4">(04) Configure as a Reverse Proxy</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=5">(05) Squid + SquidGuard</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=6">(06) Log Report : LightSquid</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=squid&amp;f=7">(07) Log Report : SARG</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=1">&nbsp; HAProxy</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=1">(01) HTTP Load Balancing</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=2">(02) SSL/TLS Settings</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=3">(03) Refer to the Statistics#1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=4">(04) Refer to the Statistics#2</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=haproxy&amp;f=5">(05) Load Balancing on Layer4</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=sysstat&amp;f=1">Monitoring</a>
+<ul style="position: absolute; margin-top: -21.9em; z-index:60;">
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=netdata&amp;f=1">&nbsp; NetData</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=netdata&amp;f=1">(01) Install NetData</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=sysstat&amp;f=1">&nbsp; SysStat</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=sysstat&amp;f=1">(01) Install SysStat</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=sysstat&amp;f=2">(02) How to use</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=prometheus&amp;f=1">&nbsp; Prometheus</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=prometheus&amp;f=1">(01) Install Prometheus</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=prometheus&amp;f=2">(02) Add Target Hosts</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=prometheus&amp;f=3">(03) Alert Settings</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=1">&nbsp; Zabbix 4.0 LTS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=1">(01) Install Zabbix 4.0</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=2">(02) Initial Setup</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=3">(03) Change admin password</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=4">(04) Set Monitoring Target</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=5">(05) Set SMTP for Notifications</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=6">(06) Notification email setting</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=7">(07) Add Monitoring Target(Ubuntu)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=8">(08) Add Monitoring Target(Win)</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=zabbix40&amp;f=9">(09) Add Monitoring Item</a></li>
+<li style="background: #e6e6fa; border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=zabbix30&amp;f=1">&nbsp; Zabbix 3.0 LTS</a></li>
+</ul>
+</li>
+<li class="tree"><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=1">Desktop Environment</a>
+<ul style="position: absolute; margin-top: -11.0em;">
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=9">(09) Connect to Windows with RDP</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=8">(08) Configure Xrdp Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=7">(07) noVNC Client</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=6">(06) Configure VNC Server</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=5">(05) Xfce Desktop Environment</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=4">(04) MATE Desktop Environment</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=3">(03) Cinnamon Desktop Environmen</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=2">(02) KDE Desktop Environment</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=desktop&amp;f=1">(01) GNOME Desktop Environment</a></li>
+</ul>
+</li>
+<li id="other"><a href="./note?os=Ubuntu_18.04&amp;p=hostname">Others</a>
+<ul style="position: absolute; margin-top: -25.55em; margin-left: 22.8em; border-left: #696969 1px dashed; z-index:60;">
+<li><a href="./note?os=Ubuntu_18.04&amp;p=nvidia">Install NVIDIA Graphic Driver</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=iperf3">Check Network Bandwidth</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=sshfs">Mount with SSHFS</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=lshw">Display Hardware Info</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=hdparm">Display HDD Info</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=quota">Set Disk Quota</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=raid1">Configure RAID 1</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssl&amp;f=1">Create SSL Certificates (Self Sign)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=ssl&amp;f=2">Get SSL Certificates (Let's Encrypt)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=acct">Monitor User Activity</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=pam_tally">Count attempted Accesses</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=password">Set Password Rules</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=timezone">Set System Timezone</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=keymap">Set KeyboardMap</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=locale">Set System Locale</a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=hostname">Set Hostname</a></li>
+</ul>
+<ul style="position: absolute; margin-top: -25.55em; z-index:55;">
+<li><a href="./note?os=Ubuntu_18.04&amp;p=virtualmin">Virtualmin <span style="display:inline;position:absolute;left:90px;">- &nbsp; System Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=usermin">Usermin <span style="display:inline;position:absolute;left:90px;">- &nbsp; System Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=webmin">Webmin <span style="display:inline;position:absolute;left:90px;">- &nbsp; System Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=redmine">Redmine <span style="display:inline;position:absolute;left:90px;">- &nbsp; Project Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=gitlab">GitLab <span style="display:inline;position:absolute;left:90px;">- &nbsp; Project Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=tensorflow&amp;f=1">TensorFlow <span style="display:inline;position:absolute;left:90px;">- &nbsp; Machine Learning</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=cuda&amp;f=1">CUDA 9.1 <span style="display:inline;position:absolute;left:90px;">- &nbsp; GPGPU</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=lynis">Lynis <span style="display:inline;position:absolute;left:90px;">- &nbsp; Security Audit</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=rkhunter">RKHunter <span style="display:inline;position:absolute;left:90px;">- &nbsp; Detect Rootkit</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=tripwire">Tripwire <span style="display:inline;position:absolute;left:90px;">- &nbsp; Host Based IDS</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=aide">AIDE <span style="display:inline;position:absolute;left:90px;">- &nbsp; Host Based IDS</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=powershell">PowerShell <span style="display:inline;position:absolute;left:90px;">- &nbsp; CommandLine Shell</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=cockpit">Cockpit <span style="display:inline;position:absolute;left:90px;">- &nbsp; System Manage</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=lsync">Lsync <span style="display:inline;position:absolute;left:90px;">- &nbsp; File Sync</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=rsync">Rsync <span style="display:inline;position:absolute;left:90px;">- &nbsp; File Sync</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=acl">ACL <span style="display:inline;position:absolute;left:90px;">- &nbsp; Access Controls</span></a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=realmd">Realmd <span style="display:inline;position:absolute;left:90px;">- &nbsp; Join in AD Domain</span></a></li>
+<li style="border-bottom: #696969 0px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=clamav">Clamav <span style="display:inline;position:absolute;left:90px;">- &nbsp; AntiVirus</span></a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div style="display: inline-block; width: 100%; font-size: 12px; text-align: center; background-color: #e6e6fa; border-bottom: 1px solid #696969; border-top: 2px solid #e6e6fa;">Sponsored Link</div>
+<div id="bann">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6423793798099903"
+     crossorigin="anonymous"></script>
+<!-- 160x600 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-6423793798099903"
+     data-ad-slot="6315121180"
+     data-ad-format="auto"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+<div id="contents">
+<br />
+<table style="width: 96%; line-height: 1.5; margin-top: 5px; margin-bottom: 10px; margin-left: auto; margin-right: auto;" summary="subject">
+<tr>
+<td style="width: 100%; height: 28px; color: #ff3399; padding-left: 50px; background: url(./img/icon.gif) #ffffff no-repeat 0 0;">
+<div class="subject">Docker : Install<div class="date">2018/06/12</div></div>
+</td>
+</tr>
+</table>
+<table class="base" summary="1">
+<tr>
+<td class="num">&nbsp;</td>
+<td>
+<div class="block">
+Install Docker which is the Operating System-Level Virtualization Tool, which automates the deployment of applications inside Containers. 
+</div>
+</td>
+</tr>
+<tr>
+<td class="num">[1]</td>
+<td>Install Docker.
+</td>
+</tr>
+</table>
+<table class="term" summary="1-1">
+<tr>
+<td>
+root@dlp:~# <div class="color1"><a href="./command/html/apt.html" onclick="return hs.htmlExpand(this, { objectType: 'iframe' } )" onkeypress="" style="color: #ffff00">apt</a> -y install docker.io </div>
+</td>
+</tr>
+</table>
+<table class="base" summary="2">
+<tr>
+<td class="num">[2]</td>
+<td>Download an official image and create a Container and output the words [Welcome to the Docker World] inside the Container. 
+</td>
+</tr>
+</table>
+<table class="term" summary="2-1">
+<tr>
+<td>
+<div class="color2"># download the image</div><br />
+root@dlp:~# <div class="color1">docker pull ubuntu </div>
+<pre style="font-family: Consolas, 'Courier New', Courier, Monaco, monospace; letter-spacing: 0;">
+Using default tag: latest
+latest: Pulling from library/ubuntu
+.....
+.....
+Status: Downloaded newer image for ubuntu:latest
+
+</pre>
+<div class="color2"># run echo inside Container</div><br />
+root@dlp:~# <div class="color1">docker run ubuntu /bin/echo "Welcome to the Docker World!" </div><br />
+Welcome to the Docker World!
+</td>
+</tr>
+</table>
+<table class="base" summary="3">
+<tr>
+<td class="num">[3]</td>
+<td>Connect to the interactive session of a Container with [i] and [t] option like follows. 
+If exit from the Container session, the process of a Container finishes.
+</td>
+</tr>
+</table>
+<table class="term" summary="3-1">
+<tr>
+<td>
+root@dlp:~# <div class="color1">docker run -i -t ubuntu /bin/bash </div><br />
+root@864190678aa7:/#  &nbsp; &nbsp; <div class="color2"># Container's console</div><br />
+root@864190678aa7:/# <div class="color1">uname -a </div><br />
+Linux 864190678aa7 4.15.0-20-generic #21-Ubuntu SMP Tue Apr 24 06:16:15 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux<br />
+root@864190678aa7:/# <div class="color1">exit </div><br />
+exit<br />
+root@dlp:~#  &nbsp; &nbsp; <div class="color2"># come back</div>
+</td>
+</tr>
+</table>
+<table class="base" summary="4">
+<tr>
+<td class="num">[4]</td>
+<td>If exit from the Container session with keeping container's process, push [Ctrl+p] and [Ctrl+q] key. 
+</td>
+</tr>
+</table>
+<table class="term" summary="4-1">
+<tr>
+<td>
+<div class="block">
+root@dlp:~# <div class="color1">docker run -i -t ubuntu /bin/bash </div><br />
+root@f8ca55be9b91:/# root@dlp:~#  &nbsp; &nbsp; <div class="color2"># Ctrl+p, Ctrl+q</div>
+</div>
+<div class="color2"># show docker process</div><br />
+root@dlp:~# <div class="color1">docker ps </div><br />
+<pre style="font-family: Consolas, 'Courier New', Courier, Monaco, monospace; letter-spacing: 0;">
+CONTAINER ID   IMAGE    COMMAND       CREATED          STATUS           PORTS      NAMES
+f8ca55be9b91   ubuntu   "/bin/bash"   32 seconds ago   Up 31 seconds               reverent_wilson
+
+</pre>
+<div class="block">
+<div class="color2"># connect to container's session</div><br />
+root@dlp:~# <div class="color1">docker attach f8ca55be9b91 </div><br />
+root@f8ca55be9b91:/#
+</div>
+<div class="color2"># shutdown container's process from Host's console</div><br />
+root@dlp:~# <div class="color1">docker kill f8ca55be9b91 </div><br />
+f8ca55be9b91<br />
+root@dlp:~# <div class="color1">docker ps </div><br />
+<pre style="font-family: Consolas, 'Courier New', Courier, Monaco, monospace; letter-spacing: 0;">
+CONTAINER ID   IMAGE    COMMAND       CREATED          STATUS           PORTS      NAMES
+
+</pre>
+</td>
+</tr>
+</table>
+<div style="width: 100%; border-top: 1px #696969 solid; margin-left: auto; margin-right: auto; text-align:center; background-color: #e6e6fa; letter-spacing: 10px;">Matched Content</div>
+<div style="width: 100%; border-top: 1px #696969 solid; padding-top: 10px; padding-bottom: 35px;">
+<div style="width: 98%; margin-left: auto; margin-right: auto; text-align:center;">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-format="autorelaxed"
+     data-ad-client="ca-pub-6423793798099903"
+     data-ad-slot="9863218866"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+</div>
+<div id="right">
+<div class="os" style="overflow: hidden;">Ubuntu 18.04 : Docker</div>
+<div class="navi2">
+<ul>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=1">(01) Install Docker</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=2">(02) Add Container images</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=3">(03) Access to Container Services</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=4">(04) Use Dockerfile</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=5">(05) Use Persistent Storage</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=6">(06) Use Docker-Registry</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=9">(07) Use Docker-Registry (Auth)</a></li>
+<li><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=7">(08) Use Docker Compose</a></li>
+<li style="border-bottom: #696969 1px solid;"><a href="./note?os=Ubuntu_18.04&amp;p=docker&amp;f=8">(09) Configure Swarm Cluster</a></li>
+</ul>
+</div>
+<div style="width: 100%; text-align: center;">
+<div style="display: inline-block; width: 100%; font-size: 12px; text-align: center; background-color: #e6e6fa; border-bottom: 1px solid #696969; border-top: 2px solid #e6e6fa;">Sponsored Link</div>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6423793798099903"
+     crossorigin="anonymous"></script>
+<!-- 300x600 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-6423793798099903"
+     data-ad-slot="2551543351"
+     data-ad-format="auto"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+<div id="footer">Copyright &copy; 2007-2021 Server World All Rights Reserved.
+<script type="text/javascript" src="./bin/count.js"></script>
+<img src="../bin/count/count.cgi?1" width="1" height="1" alt="" />
+</div>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-11962766-1");
+pageTracker._trackPageview();
+} catch(err) {}
+</script>
+</body>
+</html>
+bö•Ht      aºgÜaºgæC½oøaºgà   r    O^partitionKey=%28https%2Cserver-world.info%29,:https://www.server-world.info/en/note?os=Ubuntu_18.04&p=docker&f=1 necko:classified 1 strongly-framed 1 security-info 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 request-method GET response-head HTTP/2 200 OK
+date: Wed, 15 Dec 2021 22:10:38 GMT
+server: Apache
+content-type: text/html
+X-Firefox-Spdy: h2
+ original-response-headers date: Wed, 15 Dec 2021 22:10:38 GMT
+server: Apache
+content-type: text/html
+X-Firefox-Spdy: h2
+ ctid 1 uncompressed-len 0 net-response-time-onstart 3852 net-response-time-onstop 7366   Äw
